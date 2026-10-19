@@ -1,0 +1,9 @@
+{
+  "name": "search-owl",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Search Owl public web service",
+  "main": "server.js",
+  "scripts": { "start": "node server.js", "test": "node --test test.js" },
+  "engines": { "node": ">=20" }
+}
