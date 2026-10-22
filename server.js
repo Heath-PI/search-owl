@@ -657,6 +657,17 @@ const contextRules = [
     ],
   },
   {
+    id: "automotive",
+    match:
+      /\b(car|cars|automobile|automobiles|vehicle|vehicles|sedan|suv|truck|pickup|hatchback|coupe|convertible|minivan|ev|electric vehicle)\b/i,
+    suffixes: [
+      "official models and versions",
+      "manufacturer list price and configurator",
+      "model year trim specifications",
+      "safety recalls and ratings",
+    ],
+  },
+  {
     id: "clothing and fashion",
     match:
       /\b(clothing|clothes|fashion|apparel|outfit|outfits|dress|dresses|designer|designers|streetwear|runway|textile|textiles)\b/i,
@@ -798,6 +809,8 @@ function buildContext(query, items = [], location = "") {
           ? "gaming"
           : rule?.id === "fuel prices"
             ? "fuel"
+            : rule?.id === "automotive"
+              ? "automotive"
             : rule?.id === "clothing and fashion"
               ? "fashion"
           : rule?.id || "general",
@@ -808,16 +821,19 @@ function buildContext(query, items = [], location = "") {
         "cities and places",
         "video games",
         "fuel prices",
+        "automotive",
         "clothing and fashion",
       ].includes(rule?.id)
         ? null
-        : `${clean} ${rule.id === "video games" ? "video game" : rule.id === "fuel prices" ? "gas station fuel pump" : rule.id === "clothing and fashion" ? "fashion clothing textile" : "landscape landmark"}`,
+        : `${clean} ${rule.id === "video games" ? "video game" : rule.id === "fuel prices" ? "gas station fuel pump" : rule.id === "automotive" ? "automobile vehicle road" : rule.id === "clothing and fashion" ? "fashion clothing textile" : "landscape landmark"}`,
     visualNote: isCurrentEvent
       ? "Decorative imagery is kept generic for current-event searches and must not be treated as evidence of an incident. Check each result's publication date and the event date stated by its source."
       : visualUnsafe
         ? "Search results are unchanged, but contextual pictures are suppressed because a non-explicit decorative image could not be established safely."
         : rule?.id === "clothing and fashion"
           ? "Decorative fashion imagery is contextual only and does not imply endorsement by any designer or brand."
+          : rule?.id === "automotive"
+            ? "Decorative vehicle imagery is contextual only. It does not identify a trim, model year, condition, price, availability, or manufacturer endorsement."
           : "Decorative imagery is contextual only and does not depict or verify the retrieved claims.",
     suggestions,
     evidenceTerms,

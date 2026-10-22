@@ -168,6 +168,13 @@
           repeating-linear-gradient(45deg, #416579 0 8px, transparent 8px 30px),
           #10232e;
       }
+      body[data-scene="automotive"] {
+        --edge-scene:
+          radial-gradient(ellipse at 50% 70%, #0b1118 0 18px, transparent 19px),
+          linear-gradient(165deg, transparent 0 48%, #8ed9ff 49% 51%, transparent 52%),
+          repeating-linear-gradient(90deg, #294a58 0 18px, transparent 18px 54px),
+          #10232e;
+      }
       header {
         text-align: center;
       }
@@ -531,6 +538,17 @@
         </p>
         <a class="launch" target="_blank" rel="noopener noreferrer" href="https://daily-sheet.nabc.go.th/">Open the official Thailand OAE DeePrice history</a>
       </section>
+      <section class="panel" aria-labelledby="autoHeading">
+        <h2 id="autoHeading">Official automotive model and price discovery</h2>
+        <p class="note">
+          Compare the same country, model year, body style, powertrain, version or trim,
+          currency, taxes and fees, and observation date. A manufacturer configurator normally
+          shows a list price—not a dealer transaction price, used-car value, or guaranteed local
+          availability. These official handoffs cover representative major vehicle markets; they
+          are not a universal price feed.
+        </p>
+        <div id="autoDirectory" class="grid"></div>
+      </section>
       <section class="panel">
         <h2>Use Search Owl from your browser</h2>
         <p class="note">
@@ -852,6 +870,22 @@
         ["United States","USDA Agricultural Marketing Service Market News","Official livestock, grain, produce, dairy, cotton and specialty-crop reports; report schedules and units vary.","https://www.ams.usda.gov/market-news"],
         ["European Union","European Commission Agri-food Data Portal","Official EU agricultural market dashboards, prices and historical series by sector where published.","https://agridata.ec.europa.eu/"],
       ];
+      const automotiveSources = [
+        ["United States","Toyota USA — vehicles and build & price","https://www.toyota.com/all-vehicles/"],
+        ["United States","Ford USA — vehicles and pricing","https://www.ford.com/new-cars/"],
+        ["United Kingdom","Toyota UK — new cars and configurator","https://www.toyota.co.uk/new-cars"],
+        ["Europe / Germany","BMW — models and configurator","https://www.bmw.de/de/neufahrzeuge.html"],
+        ["Europe / France","Renault — vehicle range and configurator","https://www.renault.fr/vehicules-particuliers.html"],
+        ["Spain","SEAT — models and configurator","https://www.seat.es/coches"],
+        ["Poland","Škoda Poland — models and configurator","https://www.skoda-auto.pl/modele"],
+        ["Japan","Toyota Japan — new vehicle lineup","https://toyota.jp/carlineup/"],
+        ["South Korea","Hyundai Korea — models","https://www.hyundai.com/kr/ko/e"],
+        ["India","Tata Motors — passenger vehicles","https://cars.tatamotors.com/"],
+        ["China","BYD — vehicle lineup","https://www.bydglobal.com/en/"],
+        ["Australia","Ford Australia — vehicles","https://www.ford.com.au/vehicles/"],
+        ["Australia — marketplace listings","Carsales Australia — new and used vehicle listings","https://www.carsales.com.au/cars/"],
+        ["Brazil","Volkswagen Brazil — models and offers","https://www.vw.com.br/pt/carros.html"],
+      ];
       const q = document.querySelector("#query"),
         launches = document.querySelector("#launches"),
         summary = document.querySelector("#summary"),
@@ -903,6 +937,9 @@
       renderExchangeDirectory();
       document.querySelector("#agDirectory").innerHTML = agriculturalSources.map(([place, name, note, url]) =>
         `<a class="launch exchange-card" target="_blank" rel="noopener noreferrer" href="${esc(safeHref(url))}"><strong>${esc(name)}</strong><div class="exchange-meta">${esc(place)}</div><small>${esc(note)}</small></a>`
+      ).join("");
+      document.querySelector("#autoDirectory").innerHTML = automotiveSources.map(([market, name, url]) =>
+        `<a class="launch exchange-card" target="_blank" rel="noopener noreferrer" href="${esc(safeHref(url))}"><strong>${esc(name)}</strong><div class="exchange-meta">${esc(market)}</div><small>${market.includes("marketplace") ? "Provider marketplace handoff; an advertised asking price is not a verified transaction price." : "Official manufacturer destination."} Verify model year, trim, local currency, taxes, fees, listing or observation date, and price type.</small></a>`
       ).join("");
       q.value = new URLSearchParams(location.search).get("q") || "";
       let currentTopic = sessionStorage.getItem("searchOwlCurrentTopic") || "";
@@ -1124,6 +1161,7 @@
             "economics and finance": "economy",
             "local services": "local",
             "fuel prices": "fuel",
+            automotive: "automotive",
             "clothing and fashion": "fashion",
           };
           document.body.dataset.scene = sceneByTopic[context.topic] || "";

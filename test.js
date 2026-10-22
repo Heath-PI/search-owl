@@ -80,6 +80,10 @@ test("context follows math, space, government, economy and general queries", () 
   assert.match(buildContext("Starfield gameplay").sceneQuery, /video game/);
   assert.equal(buildContext("designer clothing").topic, "clothing and fashion");
   assert.match(buildContext("designer clothing").visualNote, /does not imply endorsement/);
+  const car = buildContext("2026 electric car prices and versions");
+  assert.equal(car.topic, "automotive");
+  assert.match(car.sceneQuery, /automobile vehicle road/);
+  assert.match(car.visualNote, /does not identify a trim/);
   assert.equal(buildContext("Paris protests today").topic, "news and current events");
   assert.equal(buildContext("Paris protests today").sceneQuery, null);
   assert.equal(
@@ -151,6 +155,13 @@ test("context decoration stays outside the centered owl and hides on mobile", ()
   assert.match(html, /FAO\/GIEWS Laos country coverage/);
   assert.match(html, /18,000 THB per metric tonne/);
   assert.match(html, /absent rather than filled in/);
+  assert.match(html, /Official automotive model and price discovery/);
+  assert.match(html, /Toyota Japan — new vehicle lineup/);
+  assert.match(html, /Škoda Poland — models and configurator/);
+  assert.match(html, /Carsales Australia — new and used vehicle listings/);
+  assert.match(html, /advertised asking price is not a verified transaction price/);
+  assert.match(html, /manufacturer configurator normally[\s\S]*list price/);
+  assert.match(html, /body\[data-scene="automotive"\]/);
   assert.match(html, /safeHref = \(value\)/);
   assert.match(html, /\["http:", "https:"\]/);
   assert.doesNotMatch(html, /https?:\/\/[^"']+\.(?:jpg|jpeg|png|webp)/i);
