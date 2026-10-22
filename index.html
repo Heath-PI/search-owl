@@ -262,6 +262,10 @@
         color: #a8c0cc;
         margin-top: 5px;
       }
+      .exchange-tools { display: flex; gap: 10px; align-items: center; }
+      .exchange-card { min-height: 126px; }
+      .exchange-card strong { color: #8ed9ff; }
+      .exchange-meta { color: #efb84b; font-size: 13px; margin: 6px 0; }
       .hidden {
         display: none;
       }
@@ -492,6 +496,41 @@
         </p>
         <div id="launches" class="grid"></div>
       </section>
+      <section class="panel" aria-labelledby="exchangeHeading">
+        <h2 id="exchangeHeading">Official worldwide exchange directory</h2>
+        <p class="note">
+          A curated directory of 48 major official securities exchanges and exchange groups,
+          verified October 21, 2026. It is broad, not exhaustive, and does not republish quote
+          streams. Search Owl links to official destinations; each venue controls its own timing,
+          licensing, availability, and account requirements. For a wider authoritative reference,
+          consult the <a href="https://www.world-exchanges.org/membership/membership-overview" target="_blank" rel="noopener noreferrer">World Federation of Exchanges members and affiliates</a>.
+        </p>
+        <div class="exchange-tools">
+          <input id="exchangeFilter" type="search" placeholder="Filter by exchange, country, city, or region" aria-label="Filter official exchange directory" />
+          <span id="exchangeCount" class="badge"></span>
+        </div>
+        <div id="exchangeDirectory" class="grid" style="margin-top: 12px"></div>
+      </section>
+      <section class="panel" aria-labelledby="agHeading">
+        <h2 id="agHeading">Agricultural and local-market price sources</h2>
+        <p class="note">
+          These markets influence one another through trade, but they are not one giant market.
+          Farm-gate, wholesale, retail, auction, and futures prices describe different places and
+          stages of sale. Compare only matching item, variety or grade, unit, currency, locality,
+          market type, and observation date. This directory provides nine no-cost official
+          destinations; availability varies and gaps are never interpolated.
+        </p>
+        <div id="agDirectory" class="grid"></div>
+        <h3>Verified recent-history example</h3>
+        <p class="note">
+          Thailand OAE/NABC reported Hom Mali 105 paddy rice at Sahaphatthana Rice Mill,
+          Buriram: <b>18,000 THB per metric tonne</b> on October 2, 5, 6, 7, 8, 9, 12, 14,
+          and 15, 2026. Source market type: daily purchase point/major market. Retrieved
+          October 21, 2026. Those are the observations the source published across the prior
+          14 days; absent calendar dates are left absent rather than filled in.
+        </p>
+        <a class="launch" target="_blank" rel="noopener noreferrer" href="https://daily-sheet.nabc.go.th/">Open the official Thailand OAE DeePrice history</a>
+      </section>
       <section class="panel">
         <h2>Use Search Owl from your browser</h2>
         <p class="note">
@@ -699,14 +738,34 @@
           "Official filings search. Publication time is supplied by the SEC; not a securities quote feed.",
         ],
         [
-          "NSE India",
+          "NSE India — Mumbai",
           "https://www.nseindia.com/search?q={q}",
-          "Official exchange-site search. Search Owl does not redistribute NSE quotes; real-time and delayed feeds require licensing.",
+          "National Stock Exchange of India official search. Its corporate office is in Mumbai; New Delhi is a regional office. Search Owl does not redistribute NSE quotes.",
         ],
         [
-          "BSE India",
+          "BSE India — Bombay Stock Exchange, Mumbai",
           "https://www.bseindia.com/search.aspx?search={q}",
-          "Official exchange-site handoff; quote timing and licensing are controlled by BSE.",
+          "Official Bombay Stock Exchange handoff in Mumbai. This is BSE India, not the Beijing Stock Exchange. Quote timing and licensing are controlled by BSE India.",
+        ],
+        [
+          "SET Thailand — Bangkok",
+          "https://www.set.or.th/en/market/overview",
+          "Official Stock Exchange of Thailand market overview. Its documented data products include 15-minute-delayed and licensed real-time feeds; Search Owl provides the official handoff only.",
+        ],
+        [
+          "Beijing Stock Exchange — China",
+          "https://www.bse.cn/",
+          "Official Beijing Stock Exchange landing page. This is Beijing BSE, distinct from Bombay BSE in India; enter the company or instrument on the destination.",
+        ],
+        [
+          "Shanghai Stock Exchange — China",
+          "https://english.sse.com.cn/",
+          "Official Shanghai Stock Exchange English site. Real-time Level 1 and Level 2 products are distributed through authorized vendors; public site dates govern displayed information.",
+        ],
+        [
+          "Moscow Exchange — Russia",
+          "https://www.moex.com/en/marketdata/",
+          "Official MOEX market-data handoff. Anonymous access is generally delayed 15 minutes; public redistribution rights are separate and are not claimed by Search Owl.",
         ],
         [
           "London Stock Exchange",
@@ -716,7 +775,7 @@
         [
           "Japan Exchange Group",
           "https://www.jpx.co.jp/english/search.html?q={q}",
-          "Official exchange and market-information handoff; no real-time feed is claimed.",
+          "Official exchange and market-information handoff. JPX labels most index data at least 1 minute delayed and Nikkei 225, stock search and many prices at least 15 minutes delayed; no real-time feed is claimed.",
         ],
         [
           "European Securities and Markets Authority",
@@ -732,6 +791,67 @@
         ndl[2] =
           "Official NDL Search catalogue; enter the query on the destination. Stable official landing page.";
       }
+      const exchangeDirectory = [
+        ["North America","United States","New York","New York Stock Exchange (NYSE)","https://www.nyse.com/"],
+        ["North America","United States","New York","Nasdaq", "https://www.nasdaq.com/"],
+        ["North America","United States","Chicago","Cboe Global Markets", "https://www.cboe.com/"],
+        ["North America","Canada","Toronto","TMX Group / Toronto Stock Exchange", "https://www.tsx.com/"],
+        ["North America","Mexico","Mexico City","Bolsa Mexicana de Valores", "https://www.bmv.com.mx/"],
+        ["South America","Brazil","São Paulo","B3 — Brasil, Bolsa, Balcão", "https://www.b3.com.br/en_us/"],
+        ["South America","Chile","Santiago","Santiago Stock Exchange — nuam", "https://www.nuam.com/en/markets-exchanges-participants-nuam"],
+        ["South America","Colombia","Bogotá","Colombian Stock Exchange (bvc) — nuam", "https://www.nuam.com/en/markets-exchanges-participants-nuam"],
+        ["South America","Peru","Lima","Lima Stock Exchange (BVL) — nuam", "https://www.nuam.com/en/markets-exchanges-participants-nuam"],
+        ["South America","Venezuela","Caracas","Bolsa de Valores de Caracas", "https://www.bolsadecaracas.com/"],
+        ["South America","Argentina","Buenos Aires","BYMA — Bolsas y Mercados Argentinos", "https://www.byma.com.ar/"],
+        ["Europe","United Kingdom","London","London Stock Exchange", "https://www.londonstockexchange.com/"],
+        ["Europe","Pan-European","Amsterdam / Brussels / Dublin / Lisbon / Milan / Oslo / Paris","Euronext", "https://www.euronext.com/"],
+        ["Europe","Germany","Frankfurt","Deutsche Börse / Frankfurt Stock Exchange", "https://www.deutsche-boerse.com/"],
+        ["Europe","Switzerland","Zurich","SIX Swiss Exchange", "https://www.six-group.com/en/products-services/the-swiss-stock-exchange.html"],
+        ["Europe","Spain","Madrid","BME — Bolsas y Mercados Españoles", "https://www.bolsasymercados.es/"],
+        ["Europe","Sweden / Nordic markets","Stockholm","Nasdaq Nordic", "https://www.nasdaqomxnordic.com/"],
+        ["Europe","Poland","Warsaw","Warsaw Stock Exchange", "https://www.gpw.pl/"],
+        ["Europe","Austria","Vienna","Vienna Stock Exchange", "https://www.wienerborse.at/en/"],
+        ["Europe","Greece","Athens","Athens Exchange Group", "https://www.athexgroup.gr/"],
+        ["Europe / Asia","Türkiye","Istanbul","Borsa İstanbul", "https://www.borsaistanbul.com/en/"],
+        ["Europe / Asia","Russia","Moscow","Moscow Exchange", "https://www.moex.com/en/"],
+        ["Africa","South Africa","Johannesburg","Johannesburg Stock Exchange", "https://www.jse.co.za/"],
+        ["Africa","Nigeria","Lagos","Nigerian Exchange Group", "https://ngxgroup.com/"],
+        ["Africa","Egypt","Cairo","The Egyptian Exchange", "https://www.egx.com.eg/"],
+        ["Africa","Morocco","Casablanca","Casablanca Stock Exchange", "https://www.casablanca-bourse.com/"],
+        ["Africa","Kenya","Nairobi","Nairobi Securities Exchange", "https://www.nse.co.ke/"],
+        ["Middle East","Saudi Arabia","Riyadh","Saudi Exchange / Tadawul", "https://www.saudiexchange.sa/"],
+        ["Middle East","United Arab Emirates","Abu Dhabi","Abu Dhabi Securities Exchange", "https://www.adx.ae/"],
+        ["Middle East","United Arab Emirates","Dubai","Dubai Financial Market", "https://www.dfm.ae/"],
+        ["Middle East","Israel","Tel Aviv","Tel Aviv Stock Exchange", "https://www.tase.co.il/en"],
+        ["Asia-Pacific","Japan","Tokyo","Japan Exchange Group", "https://www.jpx.co.jp/english/"],
+        ["Asia-Pacific","China","Shanghai","Shanghai Stock Exchange", "https://english.sse.com.cn/"],
+        ["Asia-Pacific","China","Shenzhen","Shenzhen Stock Exchange", "https://www.szse.cn/English/"],
+        ["Asia-Pacific","China","Beijing","Beijing Stock Exchange", "https://www.bse.cn/"],
+        ["Asia-Pacific","Hong Kong","Hong Kong","Hong Kong Exchanges and Clearing", "https://www.hkex.com.hk/"],
+        ["Asia-Pacific","Singapore","Singapore","Singapore Exchange", "https://www.sgx.com/"],
+        ["Asia-Pacific","South Korea","Busan / Seoul","Korea Exchange", "https://global.krx.co.kr/"],
+        ["Asia-Pacific","India","Mumbai","National Stock Exchange of India", "https://www.nseindia.com/"],
+        ["Asia-Pacific","India","Mumbai","BSE India — Bombay Stock Exchange", "https://www.bseindia.com/"],
+        ["Asia-Pacific","Thailand","Bangkok","Stock Exchange of Thailand", "https://www.set.or.th/en/home"],
+        ["Asia-Pacific","Malaysia","Kuala Lumpur","Bursa Malaysia", "https://www.bursamalaysia.com/"],
+        ["Asia-Pacific","Indonesia","Jakarta","Indonesia Stock Exchange", "https://www.idx.co.id/en"],
+        ["Asia-Pacific","Philippines","Metro Manila","Philippine Stock Exchange", "https://www.pse.com.ph/"],
+        ["Asia-Pacific","Vietnam","Hanoi / Ho Chi Minh City","Vietnam Exchange", "https://vnx.vn/"],
+        ["Asia-Pacific","Taiwan","Taipei","Taiwan Stock Exchange", "https://www.twse.com.tw/en/"],
+        ["Asia-Pacific","Australia","Sydney","Australian Securities Exchange (ASX)", "https://www.asx.com.au/"],
+        ["Asia-Pacific","New Zealand","Wellington","NZX", "https://www.nzx.com/"]
+      ];
+      const agriculturalSources = [
+        ["Global","FAO Food Price Monitoring and Analysis (FPMA)","Domestic and international food-price series with country, market, commodity, unit and date where supplied.","https://fpma.fao.org/giews/fpmat4/#/dashboard/home"],
+        ["Thailand — Bangkok","Department of Internal Trade daily agricultural retail and wholesale prices","Daily Bangkok-area minimum, maximum and average THB prices with date-range export.","https://pricelist.dit.go.th/"],
+        ["Thailand — national and major purchase points","OAE/NABC DeePrice","Daily purchase-point and farm-gate observations plus weekly/monthly history; item grade, market and unit are shown.","https://daily-sheet.nabc.go.th/"],
+        ["Malaysia — nationwide","FAMA Agri Market Insight (AMI)","Daily farm-gate, wholesale and retail monitoring; 262 commodity varieties and weekly/monthly/yearly analysis.","https://ami.fama.gov.my/"],
+        ["Vietnam — national","IPSARD agricultural price database","Official lookup by commodity and date with daily, weekly or monthly views and optional price type, unit, currency and source fields.","https://agro.gov.vn/vn/nguonwmy.aspx"],
+        ["Vietnam — Tiền Giang","Provincial agricultural market-price bulletins","Dated local agricultural and input-price bulletins; publication frequency varies.","https://htttnongnghiep.tiengiang.gov.vn/market-price"],
+        ["Laos","FAO/GIEWS Laos country coverage","Official country briefs and FPMA-linked food-price monitoring; not a guarantee of daily local farmers-market observations.","https://www.fao.org/giews/countrybrief/country.jsp?code=LAO"],
+        ["United States","USDA Agricultural Marketing Service Market News","Official livestock, grain, produce, dairy, cotton and specialty-crop reports; report schedules and units vary.","https://www.ams.usda.gov/market-news"],
+        ["European Union","European Commission Agri-food Data Portal","Official EU agricultural market dashboards, prices and historical series by sector where published.","https://agridata.ec.europa.eu/"],
+      ];
       const q = document.querySelector("#query"),
         launches = document.querySelector("#launches"),
         summary = document.querySelector("#summary"),
@@ -766,6 +886,24 @@
             return "#";
           }
         };
+      const exchangeFilter = document.querySelector("#exchangeFilter"),
+        exchangeGrid = document.querySelector("#exchangeDirectory"),
+        exchangeCount = document.querySelector("#exchangeCount");
+      function renderExchangeDirectory(value = "") {
+        const needle = value.trim().toLocaleLowerCase(),
+          matches = exchangeDirectory.filter((row) =>
+            row.slice(0, 4).join(" ").toLocaleLowerCase().includes(needle),
+          );
+        exchangeCount.textContent = `${matches.length} of ${exchangeDirectory.length}`;
+        exchangeGrid.innerHTML = matches.map(([region, country, city, name, url]) =>
+          `<a class="launch exchange-card" target="_blank" rel="noopener noreferrer" href="${esc(safeHref(url))}"><strong>${esc(name)}</strong><div class="exchange-meta">${esc(region)} · ${esc(country)} · ${esc(city)}</div><small>Official destination. Search Owl does not claim or republish a live quote feed.</small></a>`
+        ).join("") || "<p>No directory entry matches that filter.</p>";
+      }
+      exchangeFilter.addEventListener("input", () => renderExchangeDirectory(exchangeFilter.value));
+      renderExchangeDirectory();
+      document.querySelector("#agDirectory").innerHTML = agriculturalSources.map(([place, name, note, url]) =>
+        `<a class="launch exchange-card" target="_blank" rel="noopener noreferrer" href="${esc(safeHref(url))}"><strong>${esc(name)}</strong><div class="exchange-meta">${esc(place)}</div><small>${esc(note)}</small></a>`
+      ).join("");
       q.value = new URLSearchParams(location.search).get("q") || "";
       let currentTopic = sessionStorage.getItem("searchOwlCurrentTopic") || "";
       const showCurrentTopic = () => {
