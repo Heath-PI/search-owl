@@ -128,5 +128,7 @@ test("context decoration stays outside the centered owl and hides on mobile", ()
   assert.match(html, /topic-wallpaper left/);
   assert.match(server, /Wikimedia Commons/);
   assert.match(html, /GasBuddy — Local station search/);
+  assert.match(html, /safeHref = \(value\)/);
+  assert.match(html, /\["http:", "https:"\]/);
   assert.doesNotMatch(html, /https?:\/\/[^"']+\.(?:jpg|jpeg|png|webp)/i);
 });

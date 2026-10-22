@@ -755,7 +755,17 @@
                 '"': "&quot;",
                 "'": "&#39;",
               })[c],
-          );
+          ),
+        safeHref = (value) => {
+          try {
+            const parsed = new URL(String(value || ""), location.origin);
+            return ["http:", "https:"].includes(parsed.protocol)
+              ? parsed.href
+              : "#";
+          } catch {
+            return "#";
+          }
+        };
       q.value = new URLSearchParams(location.search).get("q") || "";
       let currentTopic = sessionStorage.getItem("searchOwlCurrentTopic") || "";
       const showCurrentTopic = () => {
@@ -893,7 +903,7 @@
             item.date,
             item.language,
           ].filter(Boolean);
-        return `<div class="result"><a target="_blank" rel="noopener" href="${esc(item.url)}">${esc(item.title)}</a>${provider ? ` <span class="badge">${esc(provider)}</span>` : ""}${facts.length ? `<p class="note">${facts.map(esc).join(" · ")}</p>` : ""}<p>${esc(item.snippet)}</p><a target="_blank" rel="noopener" href="${esc(translateUrl(text))}">Translate this text with Google Translate</a></div>`;
+        return `<div class="result"><a target="_blank" rel="noopener noreferrer" href="${esc(safeHref(item.url))}">${esc(item.title)}</a>${provider ? ` <span class="badge">${esc(provider)}</span>` : ""}${facts.length ? `<p class="note">${facts.map(esc).join(" · ")}</p>` : ""}<p>${esc(item.snippet)}</p><a target="_blank" rel="noopener noreferrer" href="${esc(safeHref(translateUrl(text)))}">Translate this text with Google Translate</a></div>`;
       }
       document.querySelector("#translateQuery").onclick = async () => {
         const text = q.value.trim();
@@ -993,7 +1003,7 @@
                   const card = document.createElement("div");
                   card.className = "topic-picture";
                   card.style.backgroundImage = `linear-gradient(#06101822, #06101855), url("${String(item.imageUrl).replace(/["\\]/g, "")}")`;
-                  card.innerHTML = `<a href="${esc(item.sourceUrl)}" target="_blank" rel="noopener noreferrer">${esc(item.title)} · ${esc(item.creator)} · ${esc(item.license)}${item.sourceDate ? ` · ${esc(item.sourceDate)}` : ""}</a>`;
+                  card.innerHTML = `<a href="${esc(safeHref(item.sourceUrl))}" target="_blank" rel="noopener noreferrer">${esc(item.title)} · ${esc(item.creator)} · ${esc(item.license)}${item.sourceDate ? ` · ${esc(item.sourceDate)}` : ""}</a>`;
                   wallpaperSides[index % 2].appendChild(card);
                 });
               })
