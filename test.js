@@ -84,6 +84,20 @@ test("context follows math, space, government, economy and general queries", () 
   assert.equal(car.topic, "automotive");
   assert.match(car.sceneQuery, /automobile vehicle road/);
   assert.match(car.visualNote, /does not identify a trim/);
+  const property = buildContext("apartments for rent", [], "Berlin, Germany");
+  assert.equal(property.topic, "real estate");
+  assert.match(property.sceneQuery, /residential architecture/);
+  assert.match(property.visualNote, /does not depict a listed property/);
+  assert.equal(property.locationApplied, "Berlin, Germany");
+  const hospital = buildContext("hospitals", [], "Madrid, Spain");
+  assert.equal(hospital.topic, "hospitals");
+  assert.match(hospital.sceneQuery, /hospital healthcare building/);
+  assert.match(hospital.visualNote, /does not identify an actual facility/);
+  assert.equal(hospital.locationApplied, "Madrid, Spain");
+  const amenity = buildContext("movie theaters near me", [], "Warsaw, Poland");
+  assert.equal(amenity.topic, "local places and amenities");
+  assert.match(amenity.sceneQuery, /local shops exterior/);
+  assert.equal(amenity.locationApplied, "Warsaw, Poland");
   assert.equal(buildContext("Paris protests today").topic, "news and current events");
   assert.equal(buildContext("Paris protests today").sceneQuery, null);
   assert.equal(
@@ -121,13 +135,19 @@ test("location is opt-in and only applies to relevant service searches", () => {
   assert.match(html, /Reset \/ change topic/);
   assert.doesNotMatch(html, /28654|Moravian Falls/);
 });
-test("context decoration stays outside the centered owl and hides on mobile", () => {
+test("context decoration stays outside the centered owl and remains useful on narrow screens", () => {
   const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
   const server = fs.readFileSync(path.join(__dirname, "server.js"), "utf8");
   assert.match(html, /centered-owl/);
   assert.match(html, /body::before[\s\S]*body::after/);
   assert.match(html, /pointer-events:\s*none/);
-  assert.match(html, /@media \(max-width: 650px\)[\s\S]*body::before/);
+  assert.match(html, /<body data-scene="general">/);
+  assert.match(html, /@media \(max-width: 1180px\)[\s\S]*\.topic-wallpaper[\s\S]*position:\s*relative/);
+  assert.match(html, /Cars, models & prices/);
+  assert.match(html, /href="#autoHeading"/);
+  assert.match(html, /Homes & real estate/);
+  assert.match(html, /Hospitals worldwide/);
+  assert.match(html, /Nearby places & amenities/);
   assert.match(html, /data-scene="city"/);
   assert.match(html, /topic-wallpaper left/);
   assert.match(server, /Wikimedia Commons/);
@@ -162,6 +182,18 @@ test("context decoration stays outside the centered owl and hides on mobile", ()
   assert.match(html, /advertised asking price is not a verified transaction price/);
   assert.match(html, /manufacturer configurator normally[\s\S]*list price/);
   assert.match(html, /body\[data-scene="automotive"\]/);
+  assert.match(html, /Worldwide real-estate listing discovery/);
+  assert.match(html, /Rightmove/);
+  assert.match(html, /Trade Me Property/);
+  assert.match(html, /asking[\s\S]*not proof of a completed transaction/);
+  assert.match(html, /Official hospital and health-facility finders/);
+  assert.match(html, /Medicare Care Compare/);
+  assert.match(html, /NHS — Find a hospital/);
+  assert.match(html, /Nearby places and amenities/);
+  assert.match(html, /OpenStreetMap/);
+  assert.match(html, /body\[data-scene="real-estate"\]/);
+  assert.match(html, /body\[data-scene="hospitals"\]/);
+  assert.match(html, /body\[data-scene="amenities"\]/);
   assert.match(html, /safeHref = \(value\)/);
   assert.match(html, /\["http:", "https:"\]/);
   assert.doesNotMatch(html, /https?:\/\/[^"']+\.(?:jpg|jpeg|png|webp)/i);

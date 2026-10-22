@@ -657,6 +657,39 @@ const contextRules = [
     ],
   },
   {
+    id: "real estate",
+    match:
+      /\b(real estate|property|properties|home|homes|house|houses|apartment|apartments|condo|condos|flat|flats|rent|rental|rentals|mortgage)\b/i,
+    suffixes: [
+      "homes for sale official listing portal",
+      "rental listings monthly rent",
+      "property type floor area and listing date",
+      "sold price or transaction registry",
+    ],
+  },
+  {
+    id: "hospitals",
+    match:
+      /\b(hospital|hospitals|emergency room|emergency department|medical centre|medical center|healthcare facility|health care facility)\b/i,
+    suffixes: [
+      "official hospital directory",
+      "government health service finder",
+      "emergency department and services",
+      "hospital address and official contact details",
+    ],
+  },
+  {
+    id: "local places and amenities",
+    match:
+      /\b(grocery|groceries|supermarket|supermarkets|cinema|cinemas|movie theater|movie theaters|movie theatre|movie theatres|amenity|amenities|restaurant|restaurants|pharmacy|pharmacies|store|stores|shop|shops|near me|nearby)\b/i,
+    suffixes: [
+      "map and official website",
+      "current opening hours",
+      "accessibility and services",
+      "directions and contact details",
+    ],
+  },
+  {
     id: "automotive",
     match:
       /\b(car|cars|automobile|automobiles|vehicle|vehicles|sedan|suv|truck|pickup|hatchback|coupe|convertible|minivan|ev|electric vehicle)\b/i,
@@ -719,7 +752,8 @@ function isLocationRelevant(query) {
       value,
     ) && /\b(provider|supplier|utility|service|near me|local)\b/i.test(value)) ||
     (/\b(gas(?:oline)?|petrol|diesel|fuel)\b/i.test(value) &&
-      /\b(price|prices|cost|costs|station|stations|near me|local)\b/i.test(value))
+      /\b(price|prices|cost|costs|station|stations|near me|local)\b/i.test(value)) ||
+    /\b(real estate|property|properties|home|homes|house|houses|apartment|apartments|condo|condos|flat|flats|rent|rental|rentals|hospital|hospitals|emergency room|emergency department|medical centre|medical center|healthcare facility|health care facility|grocery|groceries|supermarket|supermarkets|cinema|cinemas|movie theater|movie theatre|amenity|amenities|restaurant|restaurants|pharmacy|pharmacies|store|stores|shop|shops|near me|nearby)\b/i.test(value)
   );
 }
 function buildContext(query, items = [], location = "") {
@@ -811,6 +845,12 @@ function buildContext(query, items = [], location = "") {
             ? "fuel"
             : rule?.id === "automotive"
               ? "automotive"
+            : rule?.id === "real estate"
+              ? "real-estate"
+            : rule?.id === "hospitals"
+              ? "hospitals"
+            : rule?.id === "local places and amenities"
+              ? "amenities"
             : rule?.id === "clothing and fashion"
               ? "fashion"
           : rule?.id || "general",
@@ -822,10 +862,13 @@ function buildContext(query, items = [], location = "") {
         "video games",
         "fuel prices",
         "automotive",
+        "real estate",
+        "hospitals",
+        "local places and amenities",
         "clothing and fashion",
       ].includes(rule?.id)
         ? null
-        : `${clean} ${rule.id === "video games" ? "video game" : rule.id === "fuel prices" ? "gas station fuel pump" : rule.id === "automotive" ? "automobile vehicle road" : rule.id === "clothing and fashion" ? "fashion clothing textile" : "landscape landmark"}`,
+        : `${clean} ${rule.id === "video games" ? "video game" : rule.id === "fuel prices" ? "gas station fuel pump" : rule.id === "automotive" ? "automobile vehicle road" : rule.id === "real estate" ? "residential architecture house apartment exterior" : rule.id === "hospitals" ? "hospital healthcare building exterior" : rule.id === "local places and amenities" ? "city street local shops exterior" : rule.id === "clothing and fashion" ? "fashion clothing textile" : "landscape landmark"}`,
     visualNote: isCurrentEvent
       ? "Decorative imagery is kept generic for current-event searches and must not be treated as evidence of an incident. Check each result's publication date and the event date stated by its source."
       : visualUnsafe
@@ -834,6 +877,12 @@ function buildContext(query, items = [], location = "") {
           ? "Decorative fashion imagery is contextual only and does not imply endorsement by any designer or brand."
           : rule?.id === "automotive"
             ? "Decorative vehicle imagery is contextual only. It does not identify a trim, model year, condition, price, availability, or manufacturer endorsement."
+          : rule?.id === "real estate"
+            ? "Decorative architecture imagery is contextual only. It does not depict a listed property or verify its location, condition, price, availability, ownership, or agency."
+          : rule?.id === "hospitals"
+            ? "Decorative healthcare imagery is contextual only. It does not identify an actual facility or verify its services, availability, quality, accreditation, or endorsement."
+          : rule?.id === "local places and amenities"
+            ? "Decorative local-place imagery is contextual only. It does not identify a result or verify its location, opening hours, prices, services, availability, or endorsement."
           : "Decorative imagery is contextual only and does not depict or verify the retrieved claims.",
     suggestions,
     evidenceTerms,

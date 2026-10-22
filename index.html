@@ -26,7 +26,11 @@
         background: #09131d;
         color: #eef8ff;
         padding: 28px;
-        --edge-scene: none;
+        --edge-scene:
+          radial-gradient(circle at 28% 18%, #efb84b 0 3px, transparent 4px),
+          radial-gradient(circle at 72% 34%, #8ed9ff 0 2px, transparent 3px),
+          linear-gradient(155deg, transparent 0 48%, #416579 49% 50%, transparent 51%),
+          linear-gradient(#0d2230, #09131d);
       }
       main {
         width: min(980px, 100%);
@@ -81,9 +85,7 @@
         line-height: 1.25;
         pointer-events: auto;
       }
-      @media (max-width: 1180px) {
-        .topic-wallpaper { display: none; }
-      }
+      .topic-wallpaper:empty { display: none; }
       body::before {
         left: 0;
       }
@@ -175,6 +177,26 @@
           repeating-linear-gradient(90deg, #294a58 0 18px, transparent 18px 54px),
           #10232e;
       }
+      body[data-scene="real-estate"] {
+        --edge-scene:
+          linear-gradient(145deg, transparent 0 42%, #8ed9ff 43% 45%, transparent 46%),
+          repeating-linear-gradient(90deg, #315b48 0 22px, transparent 22px 48px),
+          linear-gradient(to top, #10232e 0 44%, #17354a 45% 100%);
+      }
+      body[data-scene="hospitals"] {
+        --edge-scene:
+          linear-gradient(90deg, transparent 0 42%, #eef8ff 43% 57%, transparent 58%),
+          linear-gradient(0deg, transparent 0 42%, #eef8ff 43% 57%, transparent 58%),
+          radial-gradient(circle at 50% 50%, #3d755e 0 36px, transparent 37px),
+          linear-gradient(#10232e, #17354a);
+      }
+      body[data-scene="amenities"] {
+        --edge-scene:
+          radial-gradient(circle at 50% 25%, #efb84b 0 10px, transparent 11px),
+          linear-gradient(155deg, transparent 0 48%, #8ed9ff 49% 51%, transparent 52%),
+          repeating-linear-gradient(90deg, #294a58 0 14px, transparent 14px 42px),
+          #10232e;
+      }
       header {
         text-align: center;
       }
@@ -227,6 +249,24 @@
         background: #d36a42;
         border-color: #ef906b;
       }
+      .directory-shortcuts {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        margin: -10px 0 18px;
+      }
+      .directory-shortcuts .automotive-shortcut {
+        background: #8b452d;
+        border-color: #ef906b;
+      }
+      .directory-shortcuts .property-shortcut {
+        background: #315b48;
+        border-color: #6fb58f;
+      }
+      .directory-shortcuts .hospital-shortcut {
+        background: #315b64;
+        border-color: #8ed9ff;
+      }
       .panel {
         background: #10232e;
         border: 1px solid #294a58;
@@ -276,17 +316,40 @@
       .hidden {
         display: none;
       }
-      @media (max-width: 650px) {
-        body::before,
-        body::after {
-          display: none;
+      @media (max-width: 1180px) {
+        body::before {
+          width: 100vw;
+          opacity: 0.14;
         }
+        body::after { display: none; }
+        .topic-wallpaper {
+          position: relative;
+          inset: auto;
+          width: 100%;
+          padding: 0;
+          margin: 12px 0;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          align-content: initial;
+          z-index: 1;
+        }
+        .topic-wallpaper.left,
+        .topic-wallpaper.right { left: auto; right: auto; }
+        .topic-picture { min-height: 180px; }
+      }
+      @media (max-width: 650px) {
+        body { padding: 14px; }
         .grid {
           grid-template-columns: 1fr;
         }
         .search {
           flex-direction: column;
         }
+        .directory-shortcuts {
+          grid-template-columns: 1fr;
+          margin-top: -4px;
+        }
+        .topic-wallpaper { grid-template-columns: 1fr; }
+        .topic-picture { min-height: 160px; }
       }
       @media (prefers-reduced-motion: reduce) {
         body::before,
@@ -296,9 +359,7 @@
       }
     </style>
   </head>
-  <body>
-    <aside class="topic-wallpaper left" aria-label="Attributed contextual pictures"></aside>
-    <aside class="topic-wallpaper right" aria-label="Attributed contextual pictures"></aside>
+  <body data-scene="general">
     <main>
       <style>
         .owlHero {
@@ -432,6 +493,14 @@
           Search supported sources
         </button>
       </form>
+      <nav class="directory-shortcuts" aria-label="Jump to a specialist directory">
+        <a class="launch automotive-shortcut" href="#autoHeading"><strong>Cars, models & prices</strong><small>Jump to official manufacturers and Australian listings</small></a>
+        <a class="launch property-shortcut" href="#propertyHeading"><strong>Homes & real estate</strong><small>Sale and rental portals across major regions</small></a>
+        <a class="launch hospital-shortcut" href="#hospitalHeading"><strong>Hospitals worldwide</strong><small>Official health-service and facility finders</small></a>
+        <a class="launch" href="#placesHeading"><strong>Nearby places & amenities</strong><small>Groceries, cinemas, fuel and arbitrary local places</small></a>
+        <a class="launch" href="#exchangeHeading"><strong>World exchanges</strong><small>48 official destinations</small></a>
+        <a class="launch" href="#agHeading"><strong>Agricultural prices</strong><small>Nine official sources</small></a>
+      </nav>
       <section class="panel">
         <h2>Google Translate</h2>
         <p class="note">
@@ -484,6 +553,8 @@
         <p id="contextNote" class="note"></p>
         <div id="contextSuggestions" class="grid"></div>
       </section>
+      <aside class="topic-wallpaper left" aria-label="Attributed contextual pictures"></aside>
+      <aside class="topic-wallpaper right" aria-label="Attributed contextual pictures"></aside>
       <section id="combined" class="panel hidden">
         <h2>Combined findings</h2>
         <p class="note">
@@ -548,6 +619,40 @@
           are not a universal price feed.
         </p>
         <div id="autoDirectory" class="grid"></div>
+      </section>
+      <section class="panel" aria-labelledby="propertyHeading">
+        <h2 id="propertyHeading">Worldwide real-estate listing discovery</h2>
+        <p class="note">
+          These are reputable regional listing portals, not a combined live feed. Search by country
+          and locality, then compare sale and rental listings separately. Record the local currency,
+          listing or observation date, property type, bedrooms, floor and land area with their units,
+          rental period, taxes, fees and agent status. A listing price or advertised rent is an asking
+          amount—not proof of a completed transaction, valuation, legal title, availability or ownership.
+          For transaction evidence, consult an authoritative local land registry where public access exists.
+        </p>
+        <div id="propertyDirectory" class="grid"></div>
+      </section>
+      <section class="panel" aria-labelledby="hospitalHeading">
+        <h2 id="hospitalHeading">Official hospital and health-facility finders</h2>
+        <p class="note">
+          These government and public health-system handoffs cover representative regions; they are
+          not an exhaustive global facility database. Confirm that a result is a hospital rather than
+          a clinic or other service, and verify its official address, contact details, departments and
+          current service availability on the destination. Search Owl does not rank clinical quality,
+          diagnose conditions, or invent facilities, phone numbers or services.
+        </p>
+        <div id="hospitalDirectory" class="grid"></div>
+      </section>
+      <section class="panel" aria-labelledby="placesHeading">
+        <h2 id="placesHeading">Nearby places and amenities</h2>
+        <p class="note">
+          Use these reputable map and local-directory handoffs for groceries, cinemas, fuel stations,
+          hospitals and other amenities with a locality you provide. Search Owl does not assume your
+          location or maintain a complete global point-of-interest database. Verify opening hours,
+          availability, tickets, services and prices on the destination; fuel prices need a displayed
+          source and update time.
+        </p>
+        <div id="placesDirectory" class="grid"></div>
       </section>
       <section class="panel">
         <h2>Use Search Owl from your browser</h2>
@@ -886,6 +991,47 @@
         ["Australia — marketplace listings","Carsales Australia — new and used vehicle listings","https://www.carsales.com.au/cars/"],
         ["Brazil","Volkswagen Brazil — models and offers","https://www.vw.com.br/pt/carros.html"],
       ];
+      const propertySources = [
+        ["United States","Realtor.com","https://www.realtor.com/realestateandhomes-search/"],
+        ["Canada","REALTOR.ca","https://www.realtor.ca/"],
+        ["United Kingdom","Rightmove","https://www.rightmove.co.uk/"],
+        ["Germany","ImmoScout24","https://www.immobilienscout24.de/Suche/de/immobilien/"],
+        ["France","SeLoger","https://www.seloger.com/"],
+        ["Spain","idealista Spain","https://www.idealista.com/en/"],
+        ["Poland","Otodom","https://www.otodom.pl/"],
+        ["Japan","SUUMO","https://suumo.jp/"],
+        ["South Korea","Zigbang","https://www.zigbang.com/"],
+        ["India","99acres","https://www.99acres.com/"],
+        ["Australia","realestate.com.au","https://www.realestate.com.au/"],
+        ["New Zealand","Trade Me Property","https://www.trademe.co.nz/a/property/search"],
+        ["Brazil","Viva Real","https://www.vivareal.com.br/"],
+        ["South Africa","Property24","https://www.property24.com/"],
+        ["United Arab Emirates","Bayut","https://www.bayut.com/"],
+        ["Singapore","PropertyGuru Singapore","https://www.propertyguru.com.sg/"],
+      ];
+      const hospitalSources = [
+        ["United States","Medicare Care Compare — hospitals","Official federal directory","https://www.medicare.gov/care-compare/?providerType=Hospital"],
+        ["England","NHS — Find a hospital","Official NHS finder","https://www.nhs.uk/service-search/Hospital"],
+        ["Germany","Federal Hospital Atlas","Federal Ministry of Health directory","https://gesund.bund.de/en/service/krankenhaussuche"],
+        ["Spain","National Catalogue of Hospitals","Ministry of Health catalogue","https://www.sanidad.gob.es/en/estadEstudios/estadisticas/sisInfSanSNS/ofertaRecursos/hospitales/home.htm"],
+        ["France","Santé.fr health directory","Official public health portal","https://www.sante.fr/annuaire-sante"],
+        ["India","National Hospital Directory dataset","Government open-data directory","https://www.data.gov.in/resource/national-hospital-directory-geo-code-and-additional-parameters-updated-till-last-month"],
+        ["Australia","healthdirect Service Finder","Government-funded national finder","https://www.healthdirect.gov.au/australian-health-services"],
+        ["New Zealand","Healthpoint hospitals","National health-service directory","https://www.healthpoint.co.nz/public/"],
+        ["Japan","Medical Information Net","Ministry-supported medical institution search","https://www.iryou.teikyouseido.mhlw.go.jp/znk-web/juminkanja/S2300/initialize"],
+        ["South Korea","E-Gen hospital search","National emergency medical information finder","https://www.e-gen.or.kr/egen/search_hospital.do"],
+        ["Singapore","MOH healthcare institutions","Ministry of Health directory","https://www.moh.gov.sg/resources-statistics/healthcare-institution-statistics"],
+        ["United Arab Emirates","UAE healthcare providers","Official government provider directory guide","https://u.ae/en/information-and-services/health-and-fitness/healthcare-providers"],
+        ["Brazil","CNES health establishments","Official national facility registry","https://cnes.datasus.gov.br/pages/estabelecimentos/consulta.jsp"],
+      ];
+      const placesSources = [
+        ["Worldwide","Google Maps","Broad map and business-directory handoff","https://www.google.com/maps/search/{q}"],
+        ["Worldwide","Bing Maps","Map and local-place search handoff","https://www.bing.com/maps?q={q}"],
+        ["Worldwide","OpenStreetMap","Community map search; verify business details","https://www.openstreetmap.org/search?query={q}"],
+        ["Worldwide","Apple Maps","Map and place-search handoff","https://maps.apple.com/?q={q}"],
+        ["Worldwide","HERE WeGo","Map and place-search handoff","https://wego.here.com/search/{q}"],
+        ["Supported markets","Yelp","Local business directory handoff","https://www.yelp.com/search?find_desc={q}"],
+      ];
       const q = document.querySelector("#query"),
         launches = document.querySelector("#launches"),
         summary = document.querySelector("#summary"),
@@ -941,6 +1087,21 @@
       document.querySelector("#autoDirectory").innerHTML = automotiveSources.map(([market, name, url]) =>
         `<a class="launch exchange-card" target="_blank" rel="noopener noreferrer" href="${esc(safeHref(url))}"><strong>${esc(name)}</strong><div class="exchange-meta">${esc(market)}</div><small>${market.includes("marketplace") ? "Provider marketplace handoff; an advertised asking price is not a verified transaction price." : "Official manufacturer destination."} Verify model year, trim, local currency, taxes, fees, listing or observation date, and price type.</small></a>`
       ).join("");
+      document.querySelector("#propertyDirectory").innerHTML = propertySources.map(([market, name, url]) =>
+        `<a class="launch exchange-card" target="_blank" rel="noopener noreferrer" href="${esc(safeHref(url))}"><strong>${esc(name)}</strong><div class="exchange-meta">${esc(market)} · sale and rental listings</div><small>Listing-portal handoff only. Verify locality, property type, area units, local currency, listing date, rental period, taxes and fees. Asking prices and advertised rents are not completed transaction prices.</small></a>`
+      ).join("");
+      document.querySelector("#hospitalDirectory").innerHTML = hospitalSources.map(([market, name, kind, url]) =>
+        `<a class="launch exchange-card" target="_blank" rel="noopener noreferrer" href="${esc(safeHref(url))}"><strong>${esc(name)}</strong><div class="exchange-meta">${esc(market)}</div><small>${esc(kind)}. Confirm facility type, official address, contact details, departments and current service availability on the destination.</small></a>`
+      ).join("");
+      const renderPlacesDirectory = (query = "amenities") => {
+        const locationValue = locationInput.value.trim();
+        const placeQuery = `${query}${locationValue ? ` ${locationValue}` : ""}`.trim();
+        document.querySelector("#placesDirectory").innerHTML = placesSources.map(([market, name, kind, template]) => {
+          const url = template.replace("{q}", encodeURIComponent(placeQuery));
+          return `<a class="launch exchange-card" target="_blank" rel="noopener noreferrer" href="${esc(safeHref(url))}"><strong>${esc(name)}</strong><div class="exchange-meta">${esc(market)}</div><small>${esc(kind)}. Verify hours, availability, services and current source timestamps.</small></a>`;
+        }).join("");
+      };
+      renderPlacesDirectory();
       q.value = new URLSearchParams(location.search).get("q") || "";
       let currentTopic = sessionStorage.getItem("searchOwlCurrentTopic") || "";
       const showCurrentTopic = () => {
@@ -1124,12 +1285,14 @@
           ) &&
             /\b(provider|supplier|utility|service|near me|local)\b/i.test(query)) ||
           (/\b(gas(?:oline)?|petrol|diesel|fuel)\b/i.test(query) &&
-            /\b(price|prices|cost|costs|station|stations|near me|local)\b/i.test(query));
+            /\b(price|prices|cost|costs|station|stations|near me|local)\b/i.test(query)) ||
+          /\b(real estate|property|properties|home|homes|house|houses|apartment|apartments|condo|condos|flat|flats|rent|rental|rentals|hospital|hospitals|emergency room|emergency department|medical centre|medical center|grocery|groceries|supermarket|cinema|cinemas|movie theater|movie theatre|amenity|amenities|near me|nearby)\b/i.test(query);
         const launchQuery =
           locationRelevant && locationOverride
             ? `${query} ${locationOverride}`
             : query;
         renderLaunches(launchQuery);
+        renderPlacesDirectory(query);
         summary.innerHTML = "<b>Searching supported APIs concurrently…</b>";
         arrivals.innerHTML = "";
         combined.classList.add("hidden");
@@ -1162,6 +1325,9 @@
             "local services": "local",
             "fuel prices": "fuel",
             automotive: "automotive",
+            "real estate": "real-estate",
+            hospitals: "hospitals",
+            "local places and amenities": "amenities",
             "clothing and fashion": "fashion",
           };
           document.body.dataset.scene = sceneByTopic[context.topic] || "";
