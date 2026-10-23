@@ -1029,6 +1029,10 @@ function start() {
         "image/jpeg",
         fs.readFileSync(path.join(__dirname, "search-owl-barn-owl.jpg")),
       );
+    if (url.pathname === "/search-owl-icon.png")
+      return send(res, 200, "image/png", fs.readFileSync(path.join(__dirname, "search-owl-icon.png")));
+    if (url.pathname === "/owl-catalog.json")
+      return send(res, 200, "application/json; charset=utf-8", fs.readFileSync(path.join(__dirname, "owl-catalog.json")));
     if (!allowed(req))
       return send(
         res,

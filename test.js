@@ -10,19 +10,35 @@ test("isolated package contains only approved deployable files", () => {
     "README.md",
     "index.html",
     "opensearch.xml",
+    "owl-catalog.json",
     "package.json",
     "render.yaml",
     "search-owl-barn-owl-license.txt",
     "search-owl-barn-owl.jpg",
+    "search-owl-icon.png",
     "server.js",
+    "scripts",
     "test.js",
   ]);
-  assert.deepEqual(fs.readdirSync(__dirname).sort(), [...allowed].sort());
+  assert.deepEqual(fs.readdirSync(__dirname).filter((name) => name !== ".git").sort(), [...allowed].sort());
+});
+test("daily owl catalog contains distinct, attributed species photographs", () => {
+  const catalog = JSON.parse(fs.readFileSync(path.join(__dirname, "owl-catalog.json"), "utf8"));
+  assert.equal(catalog.timezone, "America/New_York");
+  assert.equal(catalog.count, catalog.owls.length);
+  assert.ok(catalog.count >= 230);
+  assert.equal(new Set(catalog.owls.map((owl) => owl.scientific)).size, catalog.count);
+  assert.equal(new Set(catalog.owls.map((owl) => owl.fileName.toLowerCase())).size, catalog.count);
+  for (const owl of catalog.owls) assert.ok(owl.name && owl.scientific && owl.imageUrl && owl.sourceUrl && owl.creator && owl.license);
+  const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
+  assert.match(html, /America\/New_York/);
+  assert.match(html, /Choose an owl/);
+  assert.match(html, /owl-catalog\.json/);
 });
 test("public page preserves approved identity, attribution and perched owl", () => {
   const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
   assert.match(html, /Intensity is our priority/);
-  assert.match(html, /perched barn owl photograph/);
+  assert.match(html, /featured owl photograph/);
   assert.match(
     html,
     /Created by Master Heath, with design and implementation assistance\s+from ChatGPT \(OpenAI\)/,

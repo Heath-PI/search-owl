@@ -4,6 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
     <title>Search Owl</title>
+    <link rel="icon" type="image/png" sizes="256x256" href="/search-owl-icon.png" />
     <link
       rel="search"
       type="application/opensearchdescription+xml"
@@ -409,6 +410,12 @@
           margin: 0;
           text-shadow: 0 2px 8px #000;
         }
+        .owlCredit { margin-top: 12px; font-size: 13px; color: #e5f7ff; text-shadow: 0 2px 8px #000; }
+        .owlCredit a { color: #9fe7ff; }
+        .owlPicker { display: grid; grid-template-columns: 88px 1fr; gap: 10px 16px; align-items: center; }
+        .owlPickerBrand { width: 88px; height: 88px; object-fit: contain; grid-row: 1 / span 3; filter: drop-shadow(0 6px 10px #0009); }
+        .owlPicker label, .owlPicker select, .owlPicker p { grid-column: 2; }
+        .owlPicker select { width: min(100%, 620px); padding: 10px; border-radius: 8px; }
         @media (max-width: 650px) {
           .owlHero {
             min-height: 520px;
@@ -432,7 +439,7 @@
       </style>
       <header
         class="owlHero"
-        aria-label="Search Owl — perched barn owl photograph"
+        aria-label="Search Owl — featured owl photograph"
       >
         <div class="owlHeroCopy">
           <h1>Search Owl</h1>
@@ -441,8 +448,15 @@
             Send the owl to search supported sources concurrently, then review
             attributed, deduplicated findings and honest fallbacks.
           </p>
+          <p id="owlCredit" class="owlCredit">Loading today’s owl…</p>
         </div>
       </header>
+      <section class="panel owlPicker" aria-labelledby="owlPickerLabel">
+        <img class="owlPickerBrand" src="/search-owl-icon.png" alt="Front-facing Barn Owl cutout" />
+        <label id="owlPickerLabel" for="owlPicker"><b>Choose an owl</b></label>
+        <select id="owlPicker" disabled><option>Loading the verified owl collection…</option></select>
+        <p id="owlPickerNote" class="note">The automatic owl changes at midnight America/New_York time. A manual pick lasts until the next New York day.</p>
+      </section>
       <section class="panel">
         <label for="language" id="languageLabel"
           ><b>Display and search language</b></label
@@ -671,8 +685,8 @@
         >
         This credit describes assistance and does not imply shared legal
         ownership or official OpenAI endorsement. Google Translate supplies
-        optional translations; quality can vary. Owl photograph credit and CC0
-        license are preserved beside this application.
+        optional translations; quality can vary. Each featured owl photograph’s
+        creator, license, and source are shown with the image.
       </footer>
     </main>
     <script>
@@ -1379,6 +1393,60 @@
         }
       };
       applyLanguage();
+      const owlHero = document.querySelector(".owlHero");
+      const owlCredit = document.querySelector("#owlCredit");
+      const owlPicker = document.querySelector("#owlPicker");
+      const owlPickerNote = document.querySelector("#owlPickerNote");
+      const newYorkDate = () => {
+        const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date());
+        const value = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+        return `${value.year}-${value.month}-${value.day}`;
+      };
+      const dayNumber = (date) => {
+        const [year, month, day] = date.split("-").map(Number);
+        return Math.floor(Date.UTC(year, month - 1, day) / 86400000);
+      };
+      fetch("/owl-catalog.json")
+        .then((response) => {
+          if (!response.ok) throw new Error("Owl collection unavailable");
+          return response.json();
+        })
+        .then((catalog) => {
+          const today = newYorkDate();
+          const automaticIndex = ((dayNumber(today) - dayNumber(catalog.epoch)) % catalog.owls.length + catalog.owls.length) % catalog.owls.length;
+          owlPicker.innerHTML = `<option value="daily">Today’s owl — automatic</option>${catalog.owls.map((owl, index) => `<option value="${index}">${esc(owl.name)} (${esc(owl.scientific)})</option>`).join("")}`;
+          owlPicker.disabled = false;
+          owlPickerNote.textContent = `${catalog.count} verified species with ${catalog.count} distinct Wikimedia Commons photographs. Automatic rotation changes at midnight America/New_York time; a manual pick lasts until the next New York day.`;
+          const saved = JSON.parse(localStorage.getItem("searchOwlSelection") || "null");
+          const chosen = saved?.date === today && Number.isInteger(saved.index) ? saved.index : automaticIndex;
+          const showOwl = (index, attempts = 0) => {
+            const owl = catalog.owls[index];
+            const image = new Image();
+            image.onload = () => {
+              owlHero.style.backgroundImage = `linear-gradient(90deg, rgba(2,10,18,.76), rgba(2,10,18,.08)), linear-gradient(180deg, rgba(2,10,18,.01) 42%, rgba(2,10,18,.78) 100%), url("${owl.imageUrl.replace(/["\\]/g, "")}")`;
+              owlHero.setAttribute("aria-label", `Search Owl — ${owl.name} photograph`);
+              owlCredit.innerHTML = `<b>${esc(owl.name)}</b> · <i>${esc(owl.scientific)}</i><br>Photograph by ${esc(owl.creator)} · <a href="${esc(safeHref(owl.licenseUrl))}" target="_blank" rel="noopener noreferrer">${esc(owl.license)}</a> · <a href="${esc(safeHref(owl.sourceUrl))}" target="_blank" rel="noopener noreferrer">source</a>`;
+            };
+            image.onerror = () => attempts + 1 < catalog.owls.length ? showOwl((index + 1) % catalog.owls.length, attempts + 1) : (owlCredit.textContent = "Today’s remote owl photograph is unavailable; showing the local Barn Owl fallback.");
+            image.src = owl.imageUrl;
+          };
+          showOwl(chosen);
+          owlPicker.value = saved?.date === today ? String(chosen) : "daily";
+          owlPicker.addEventListener("change", () => {
+            if (owlPicker.value === "daily") {
+              localStorage.removeItem("searchOwlSelection");
+              showOwl(automaticIndex);
+            } else {
+              const index = Number(owlPicker.value);
+              localStorage.setItem("searchOwlSelection", JSON.stringify({ date: today, index }));
+              showOwl(index);
+            }
+          });
+        })
+        .catch(() => {
+          owlCredit.textContent = "Today’s owl collection is unavailable; showing the local Barn Owl fallback.";
+          owlPickerNote.textContent = "The owl collection could not be loaded. Search remains available.";
+        });
       if (q.value) document.querySelector("#search").requestSubmit();
     </script>
   </body>
