@@ -523,6 +523,8 @@
         <a class="launch" href="#placesHeading"><strong>Nearby places & amenities</strong><small>Groceries, cinemas, fuel and arbitrary local places</small></a>
         <a class="launch" href="#exchangeHeading"><strong>World exchanges</strong><small>48 official destinations</small></a>
         <a class="launch" href="#agHeading"><strong>Agricultural prices</strong><small>Nine official sources</small></a>
+        <a class="launch" href="#heritageHeading"><strong>Libraries & archives worldwide</strong><small>Browse by region and country, including polar collections</small></a>
+        <a class="launch" href="#horoscopeHeading"><strong>Daily owl horoscope</strong><small>A private, just-for-fun daily prompt</small></a>
       </nav>
       <section class="panel">
         <h2>Google Translate</h2>
@@ -597,6 +599,41 @@
         </p>
         <div id="launches" class="grid"></div>
       </section>
+      <section class="panel" aria-labelledby="heritageHeading">
+        <h2 id="heritageHeading">Worldwide library and archive directory</h2>
+        <p class="note">
+          Choose a world region and country to find curated national libraries, national archives,
+          and major public digital-collection portals. Search Owl preserves your original query,
+          including Unicode, only where an official destination publishes a verified search URL.
+          Otherwise the link is honestly labeled as a home or catalogue landing page where you enter
+          the query yourself. These are outbound interactive handoffs—not a crawl, a complete inventory
+          of every archive, or automatically collected results. Europeana API collection still requires
+          its own key; other destinations control access, languages, rights, and availability.
+        </p>
+        <div class="exchange-tools">
+          <select id="heritageRegion" aria-label="Library and archive world region"></select>
+          <select id="heritageCountry" aria-label="Library and archive country"></select>
+          <input id="heritageFilter" type="search" placeholder="Filter names, languages, or source types" aria-label="Filter library and archive sources" />
+          <span id="heritageCount" class="badge"></span>
+        </div>
+        <p id="heritageStatus" class="note" role="status"></p>
+        <div id="heritageDirectory" class="grid"></div>
+      </section>
+      <section class="panel" aria-labelledby="horoscopeHeading">
+        <h2 id="horoscopeHeading">Daily owl horoscope</h2>
+        <p class="note">
+          Light entertainment only—not science, professional advice, or a prediction of medical,
+          financial, legal, or life outcomes. No birth date, name, or account is collected; choose a
+          zodiac sign if you want a playful, original prompt for today.
+        </p>
+        <div class="exchange-tools">
+          <select id="zodiacSign" aria-label="Zodiac sign"></select>
+          <button id="showHoroscope" type="button">Show today’s horoscope</button>
+          <span id="horoscopeDate" class="badge"></span>
+        </div>
+        <p id="horoscopeText" role="status"></p>
+        <p class="note">Source: original Search Owl entertainment text; no external forecast is scraped or reproduced.</p>
+      </section>
       <section class="panel" aria-labelledby="exchangeHeading">
         <h2 id="exchangeHeading">Official worldwide exchange directory</h2>
         <p class="note">
@@ -633,9 +670,9 @@
             quality, services, or current operation. A market location is not a commodity-price report.
           </p>
           <div class="market-controls">
-            <label>Continent or world region<select id="marketContinent"><option value="NA" selected>North America</option><option value="CA">Central America & Caribbean</option><option value="SA">South America</option><option value="EU">Europe</option><option value="ME">Middle East</option><option value="AF">Africa</option><option value="AS">Asia</option><option value="OC">Oceania</option><option value="ALL">Worldwide / all</option></select></label>
+            <label>Continent or world region<select id="marketContinent"><option value="NA" selected>North America</option><option value="CA">Central America & Caribbean</option><option value="SA">South America</option><option value="EU">Europe</option><option value="ME">Middle East</option><option value="AF">Africa</option><option value="AS">Asia</option><option value="OC">Oceania (including Australia)</option><option value="PO">Antarctica & Arctic collections</option><option value="ALL">Worldwide / all</option></select></label>
             <label>Country or territory<select id="marketCountry"></select></label>
-            <label>Category<select id="marketCategory"><option value="markets">Local markets, farmers markets & bazaars</option><option value="hospitals">Hospitals & health facilities</option><option value="exchanges">Stock exchanges</option><option value="property">Real estate</option><option value="places">Nearby places & amenities</option></select></label>
+            <label>Category<select id="marketCategory"><option value="markets">Local markets, farmers markets & bazaars</option><option value="libraries">Libraries, archives & digital collections</option><option value="weather">Official weather warnings & alerts</option><option value="hospitals">Hospitals & health facilities</option><option value="exchanges">Stock exchanges</option><option value="property">Real estate</option><option value="places">Nearby places & amenities</option></select></label>
             <label id="marketSubdivisionLabel">State<select id="marketSubdivision"></select></label>
             <label>County, district, city, or locality<input id="marketLocality" type="search" placeholder="Example: Durham County or Asheville" /></label>
           </div>
@@ -1098,7 +1135,47 @@
         AF: new Set("AO BF BI BJ BW CD CF CG CI CM CV DJ DZ EH ER ET GA GH GM GN GQ GW KE KM LR LS LY MA MG ML MR MU MW MZ NA NE NG RE RW SC SD SH SL SN SO SS ST SZ TD TG TN TZ UG YT ZA ZM ZW".split(" ")),
         AS: new Set("AF AM AZ BD BN BT CC CN CX GE HK ID IN IO JP KG KH KP KR KZ LA LK MM MN MO MV MY NP PH PK SG TH TJ TL TM TW UZ VN".split(" ")),
         OC: new Set("AS AU BV CK FJ FM GU HM KI MH MP NC NF NR NU NZ PF PG PN PW SB TF TK TO TV UM VU WF WS".split(" ")),
+        PO: new Set("AQ SJ GL CA NO US".split(" ")),
       };
+      const regionNames = { NA:"North America", CA:"Central America & Caribbean", SA:"South America", EU:"Europe", ME:"Middle East", AF:"Africa", AS:"Asia", OC:"Oceania (including Australia)", PO:"Antarctica & Arctic collections" };
+      const heritageSources = [
+        ["EU","AT","Österreichische Nationalbibliothek","National library · Deutsch / English","https://www.onb.ac.at/"],["EU","AT","Österreichisches Staatsarchiv","National archives · Deutsch","https://www.oesta.gv.at/"],
+        ["EU","BE","KBR — Koninklijke Bibliotheek/Bibliothèque royale","National library · Nederlands / Français","https://www.kbr.be/"],["EU","BE","Archives de l'État/Rijksarchief","National archives · Français / Nederlands","https://www.arch.be/"],
+        ["EU","BG","Национална библиотека „Св. св. Кирил и Методий“","National library · Български / English","https://www.nationallibrary.bg/"],["EU","BG","Държавна агенция „Архиви“","National archives · Български","https://www.archives.government.bg/"],
+        ["EU","HR","Nacionalna i sveučilišna knjižnica u Zagrebu","National library · Hrvatski / English","https://www.nsk.hr/"],["EU","HR","Hrvatski državni arhiv","National archives · Hrvatski","https://www.arhiv.hr/"],
+        ["EU","CY","Cyprus Library / Κυπριακή Βιβλιοθήκη","National library · Ελληνικά / English","https://www.cypruslibrary.gov.cy/"],
+        ["EU","CZ","Národní knihovna České republiky","National library · Čeština / English","https://www.nkp.cz/"],["EU","CZ","Národní archiv","National archives · Čeština","https://www.nacr.cz/"],
+        ["EU","DK","Det Kgl. Bibliotek","National library · Dansk / English","https://www.kb.dk/"],["EU","DK","Rigsarkivet","National archives · Dansk / English","https://www.rigsarkivet.dk/"],
+        ["EU","EE","Eesti Rahvusraamatukogu","National library · Eesti / English","https://www.rara.ee/"],["EU","EE","Rahvusarhiiv","National archives · Eesti / English","https://www.ra.ee/"],
+        ["EU","FI","Kansalliskirjasto","National library · Suomi / Svenska / English","https://www.kansalliskirjasto.fi/"],["EU","FI","Kansallisarkisto","National archives · Suomi / Svenska / English","https://kansallisarkisto.fi/"],
+        ["EU","FR","Bibliothèque nationale de France","National library · Français","https://www.bnf.fr/"],["EU","FR","Gallica — Bibliothèque numérique de la BnF","Verified query search · Français","https://gallica.bnf.fr/services/engine/search/sru?operation=searchRetrieve&version=1.2&query=%28gallica%20all%20%22{q}%22%29"],["EU","FR","FranceArchives","National archives portal · Français","https://francearchives.gouv.fr/"],
+        ["EU","DE","Deutsche Nationalbibliothek","National library · Deutsch / English","https://www.dnb.de/"],["EU","DE","Bundesarchiv","National archives · Deutsch / English","https://www.bundesarchiv.de/"],["EU","DE","Deutsche Digitale Bibliothek","National digital collections · Deutsch / English","https://www.deutsche-digitale-bibliothek.de/"],
+        ["EU","GR","Εθνική Βιβλιοθήκη της Ελλάδος","National library · Ελληνικά / English","https://www.nlg.gr/"],["EU","GR","Γενικά Αρχεία του Κράτους","National archives · Ελληνικά","https://www.gak.gr/"],["EU","GR","SearchCulture.gr","National digital collections · Ελληνικά / English","https://www.searchculture.gr/"],
+        ["EU","HU","Országos Széchényi Könyvtár","National library · Magyar / English","https://oszk.hu/"],["EU","HU","Magyar Nemzeti Levéltár","National archives · Magyar","https://mnl.gov.hu/"],
+        ["EU","IE","National Library of Ireland","National library · English / Gaeilge","https://www.nli.ie/"],["EU","IE","National Archives of Ireland","National archives · English / Gaeilge","https://www.nationalarchives.ie/"],["EU","IE","Digital Repository of Ireland","National digital collections · English / Gaeilge","https://www.dri.ie/"],
+        ["EU","IT","Biblioteca Nazionale Centrale di Firenze","National library · Italiano","https://www.bncf.firenze.sbn.it/"],["EU","IT","Direzione generale Archivi","National archives network · Italiano","https://archivi.cultura.gov.it/"],["EU","IT","CulturaItalia","National digital collections · Italiano / English","https://www.culturaitalia.it/"],
+        ["EU","LV","Latvijas Nacionālā bibliotēka","National library · Latviešu / English","https://www.lnb.lv/"],["EU","LT","Lietuvos nacionalinė Martyno Mažvydo biblioteka","National library · Lietuvių / English","https://www.lnb.lt/"],["EU","LT","Lietuvos vyriausiojo archyvaro tarnyba","National archives · Lietuvių","https://archyvai.lrv.lt/"],["EU","LT","ePaveldas","National digital heritage · Lietuvių / English","https://www.epaveldas.lt/"],
+        ["EU","LU","Bibliothèque nationale du Luxembourg","National library · Français / Deutsch / Lëtzebuergesch","https://bnl.public.lu/"],["EU","LU","Archives nationales de Luxembourg","National archives · Français","https://anlux.public.lu/"],
+        ["EU","MT","Malta Libraries","National library · English / Malti","https://maltalibraries.gov.mt/"],["EU","MT","National Archives of Malta","National archives · English / Malti","https://nationalarchives.gov.mt/"],
+        ["EU","NL","KB, nationale bibliotheek","National library · Nederlands / English","https://www.kb.nl/"],["EU","NL","Nationaal Archief","National archives · Nederlands / English","https://www.nationaalarchief.nl/"],["EU","NL","Delpher","National digitised publications · Nederlands","https://www.delpher.nl/"],
+        ["EU","PL","Biblioteka Narodowa","National library · Polski / English","https://www.bn.org.pl/"],["EU","PL","Archiwa Państwowe","National archives · Polski / English","https://archiwa.gov.pl/"],["EU","PL","Federacja Bibliotek Cyfrowych","National digital-library federation · Polski / English","https://fbc.pionier.net.pl/"],
+        ["EU","PT","Biblioteca Nacional de Portugal","National library · Português / English","https://www.bnportugal.gov.pt/"],["EU","PT","Portal Português de Arquivos","National archives portal · Português","https://portal.arquivos.pt/"],
+        ["EU","RO","Biblioteca Națională a României","National library · Română","https://bibnat.ro/"],["EU","RO","Arhivele Naționale ale României","National archives · Română","https://arhivelenationale.ro/"],
+        ["EU","SK","Slovenská národná knižnica","National library · Slovenčina / English","https://www.snk.sk/"],["EU","SI","Narodna in univerzitetna knjižnica","National library · Slovenščina / English","https://www.nuk.uni-lj.si/"],["EU","SI","Arhiv Republike Slovenije","National archives · Slovenščina","https://www.gov.si/drzavni-organi/organi-v-sestavi/arhiv/"],["EU","SI","dLib.si","National digital library · Slovenščina / English","https://www.dlib.si/"],
+        ["EU","ES","Biblioteca Nacional de España","Verified catalogue query · Español","https://catalogo.bne.es/discovery/search?query=any,contains,{q}&vid=34BNE_INST:CATALOGO"],["EU","ES","PARES — Portal de Archivos Españoles","State archives portal · Español","https://pares.cultura.gob.es/"],["EU","ES","Hispana","National digital collections · Español","https://hispana.mcu.es/"],
+        ["EU","SE","Kungliga biblioteket","National library · Svenska / English","https://www.kb.se/"],["EU","SE","Riksarkivet","National archives · Svenska / English","https://riksarkivet.se/"],["EU","CH","Schweizerische Nationalbibliothek","National library · Deutsch / Français / Italiano","https://www.nb.admin.ch/"],["EU","CH","Schweizerisches Bundesarchiv","Federal archives · Deutsch / Français / Italiano","https://www.bar.admin.ch/"],
+        ["EU","GB","British Library","National library · English","https://www.bl.uk/"],["EU","GB","The National Archives — Discovery","Verified catalogue query · English","https://discovery.nationalarchives.gov.uk/results/r?_q={q}"],
+        ["EU","NO","Nasjonalbiblioteket","National library · Norsk / English","https://www.nb.no/"],["EU","NO","Arkivverket","National archives · Norsk / English","https://www.arkivverket.no/"],["EU","IS","Landsbókasafn Íslands","National library · Íslenska / English","https://landsbokasafn.is/"],["EU","UA","Національна бібліотека України ім. В. І. Вернадського","National library · Українська","https://www.nbuv.gov.ua/"],["EU","UA","Державна архівна служба України","National archives · Українська / English","https://archives.gov.ua/"],
+        ["ME","TR","Türkiye Millî Kütüphanesi","National library · Türkçe","https://www.millikutuphane.gov.tr/"],["ME","TR","Devlet Arşivleri Başkanlığı","National archives · Türkçe","https://www.devletarsivleri.gov.tr/"],["ME","IL","National Library of Israel","National library · עברית / العربية / English","https://www.nli.org.il/"],["ME","IL","Israel State Archives","National archives · עברית / العربية / English","https://www.archives.gov.il/"],["ME","AE","National Library and Archives UAE","National library and archives · العربية / English","https://www.nla.ae/"],["ME","QA","Qatar National Library","National library · العربية / English","https://www.qnl.qa/"],
+        ["AF","ZA","National Library of South Africa","National library · English","https://www.nlsa.ac.za/"],["AF","ZA","National Archives and Records Service","National archives · English","https://www.nationalarchives.gov.za/"],["AF","EG","Dar Al Kutub — National Library and Archives","National library and archives · العربية","https://www.darelkotob.gov.eg/"],["AF","KE","Kenya National Library Service","National library · English / Kiswahili","https://www.knls.ac.ke/"],["AF","NG","National Library of Nigeria","National library · English","https://www.nln.gov.ng/"],["AF","GH","Ghana Library Authority","National library service · English","https://gla.gov.gh/"],["AF","MA","Bibliothèque Nationale du Royaume du Maroc","National library · العربية / Français","https://www.bnrm.ma/"],["AF","TN","Bibliothèque nationale de Tunisie","National library · العربية / Français","https://www.bibliotheque.nat.tn/"],["AF","DZ","Bibliothèque nationale d'Algérie","National library · العربية / Français","https://www.biblionat.dz/"],["AF","ET","Ethiopian National Archives and Library Agency","National library and archives · English / Amharic","https://www.nala.gov.et/"],
+        ["AS","JP","国立国会図書館サーチ","Verified catalogue query · 日本語 / English","https://ndlsearch.ndl.go.jp/en/search?cs=bib&keyword={q}"],["AS","KR","National Library of Korea","National library · 한국어 / English","https://www.nl.go.kr/"],["AS","IN","National Archives of India — Abhilekh Patal","Official archival portal · English / हिन्दी","https://abhilekh-patal.in/"],["AS","IN","National Digital Library of India","National digital library · multilingual","https://www.ndl.iitkgp.ac.in/"],["AS","CN","National Library of China","National library · 中文 / English","https://www.nlc.cn/"],["AS","VN","Thư viện Quốc gia Việt Nam","National library · Tiếng Việt / English","https://nlv.gov.vn/"],["AS","SG","National Library Board Singapore","National library and archives · English / 中文 / Malay / Tamil","https://www.nlb.gov.sg/"],["AS","TH","หอสมุดแห่งชาติ","National library · ไทย","https://www.nlt.go.th/"],["AS","ID","Perpustakaan Nasional Republik Indonesia","National library · Bahasa Indonesia / English","https://www.perpusnas.go.id/"],["AS","PH","National Library of the Philippines","National library · English / Filipino","https://web.nlp.gov.ph/"],
+        ["NA","US","Library of Congress","Verified query search · English","https://www.loc.gov/search/?q={q}"],["NA","US","U.S. National Archives Catalog","National archives catalogue · English","https://catalog.archives.gov/"],["NA","CA","Library and Archives Canada","National library and archives · English / Français","https://library-archives.canada.ca/"],["NA","MX","Biblioteca Nacional de México","National library · Español","https://bnm.iib.unam.mx/"],["NA","MX","Archivo General de la Nación","National archives · Español","https://www.gob.mx/agn"],
+        ["CA","CR","Biblioteca Nacional de Costa Rica","National library · Español","https://www.sinabi.go.cr/"],["CA","JM","National Library of Jamaica","National library · English","https://nlj.gov.jm/"],["CA","CU","Biblioteca Nacional de Cuba José Martí","National library · Español","http://www.bnjm.cu/"],
+        ["SA","BR","Biblioteca Nacional Digital Brasil","National digital library · Português","https://bndigital.bn.gov.br/"],["SA","BR","Arquivo Nacional","National archives · Português","https://www.gov.br/arquivonacional/"],["SA","AR","Biblioteca Nacional Mariano Moreno","National library · Español","https://www.bn.gov.ar/"],["SA","CL","Biblioteca Nacional de Chile","National library · Español","https://www.bibliotecanacional.gob.cl/"],["SA","CL","Archivo Nacional de Chile","National archives · Español","https://www.archivonacional.gob.cl/"],["SA","CO","Biblioteca Nacional de Colombia","National library · Español","https://bibliotecanacional.gov.co/"],["SA","PE","Biblioteca Nacional del Perú","National library · Español","https://www.bnp.gob.pe/"],
+        ["OC","AU","Trove — National Library of Australia","Verified query search · English","https://trove.nla.gov.au/search?keyword={q}"],["OC","AU","National Archives of Australia","National archives · English","https://www.naa.gov.au/"],["OC","NZ","National Library of New Zealand","National library · English / Māori","https://natlib.govt.nz/"],["OC","NZ","Archives New Zealand","National archives · English / Māori","https://www.archives.govt.nz/"],["OC","NZ","DigitalNZ","Verified query search · English / Māori","https://digitalnz.org/records?text={q}"],
+        ["PO","AQ","British Antarctic Survey Archives Service","Antarctic scientific and expedition archives · English","https://www.bas.ac.uk/about/services/archives/"],["PO","AQ","Australian Antarctic Data Centre","Antarctic data catalogue · English","https://data.aad.gov.au/"],["PO","AQ","Antarctic Glaciological Data Center — NSIDC","U.S. research data catalogue · English","https://nsidc.org/data/antarctic-data"],
+        ["PO","ARCTIC","Arctic Science and Technology Information System (ASTIS)","Multinational Arctic publications and research projects · English / Français","https://www.aina.ucalgary.ca/astis/"],["PO","ARCTIC","Polar Data Catalogue","Canadian Arctic and Antarctic research data · English / Français","https://www.polardata.ca/"],["PO","ARCTIC","Norwegian Polar Institute","Arctic and Antarctic research library/data · Norsk / English","https://www.npolar.no/en/"]
+      ];
       const officialMarketSource = (code) => {
         if (code === "US") return ["USDA Local Food Directories", "https://www.ams.usda.gov/local-food-directories/farmersmarkets"];
         if (code === "CA") return ["Agriculture and Agri-Food Canada market information", "https://agriculture.canada.ca/en/sector/horticulture/market-information"];
@@ -1108,6 +1185,18 @@
         if (code === "LA") return ["FAO/GIEWS Laos country coverage", "https://www.fao.org/giews/countrybrief/country.jsp?code=LAO"];
         if (euCodes.has(code)) return ["European Commission Agri-food Data Portal", "https://agridata.ec.europa.eu/"];
         return ["FAO Food Price Monitoring and Analysis", "https://fpma.fao.org/giews/fpmat4/#/dashboard/home"];
+      };
+      const officialWeatherSource = (code) => {
+        if (code === "US") return ["U.S. National Weather Service alerts", "https://www.weather.gov/alerts"];
+        if (code === "CA") return ["Environment Canada weather alerts", "https://weather.gc.ca/warnings/index_e.html"];
+        if (code === "AU") return ["Australian Bureau of Meteorology warnings", "https://www.bom.gov.au/weather-and-climate/warnings-and-alerts"];
+        if (code === "GB") return ["UK Met Office weather warnings", "https://www.metoffice.gov.uk/weather/warnings-and-advice/uk-warnings"];
+        if (code === "NZ") return ["MetService severe weather", "https://www.metservice.com/warnings/home"];
+        if (code === "JP") return ["Japan Meteorological Agency warnings", "https://www.jma.go.jp/bosai/warning/"];
+        if (code === "IN") return ["India Meteorological Department warnings", "https://mausam.imd.gov.in/imd_latest/contents/subdivisionwise-warning_mc.php"];
+        if (code === "ZA") return ["South African Weather Service warnings", "https://www.weathersa.co.za/home/warnings"];
+        if (euCodes.has(code) || ["NO","IS","CH"].includes(code)) return ["Meteoalarm official European warnings", "https://www.meteoalarm.org/"];
+        return ["WMO Severe Weather Information Centre", "https://severeweather.wmo.int/"];
       };
       const marketContinent = document.querySelector("#marketContinent"),
         marketCountry = document.querySelector("#marketCountry"),
@@ -1120,6 +1209,38 @@
         marketMapLink = document.querySelector("#marketMapLink"),
         marketOfficialLink = document.querySelector("#marketOfficialLink");
       const countries = countryCodes.map((code) => [code, countryNames.of(code) || code]).sort((a, b) => a[1].localeCompare(b[1]));
+      const heritageRegion = document.querySelector("#heritageRegion"), heritageCountry = document.querySelector("#heritageCountry"), heritageFilter = document.querySelector("#heritageFilter"), heritageDirectory = document.querySelector("#heritageDirectory"), heritageCount = document.querySelector("#heritageCount"), heritageStatus = document.querySelector("#heritageStatus");
+      heritageRegion.innerHTML = Object.entries(regionNames).map(([code, name]) => `<option value="${code}" ${code === "EU" ? "selected" : ""}>${name}</option>`).join("");
+      const heritageCountryName = (code) => code === "ARCTIC" ? "Arctic (multinational region)" : countryNames.of(code) || code;
+      function renderHeritageCountries(preferred = "") {
+        const region = heritageRegion.value;
+        let codes = [...(continentGroups[region] || [])].filter((code) => countryCodes.includes(code));
+        if (region === "PO") codes = ["AQ", "ARCTIC"];
+        codes.sort((a, b) => heritageCountryName(a).localeCompare(heritageCountryName(b)));
+        heritageCountry.innerHTML = codes.map((code) => `<option value="${code}">${esc(heritageCountryName(code))}</option>`).join("");
+        if (preferred && codes.includes(preferred)) heritageCountry.value = preferred;
+        else if (region === "EU" && codes.includes("FR")) heritageCountry.value = "FR";
+        renderHeritageDirectory();
+      }
+      function renderHeritageDirectory() {
+        const region = heritageRegion.value, code = heritageCountry.value, needle = heritageFilter.value.trim().toLocaleLowerCase(), query = q?.value?.trim?.() || "";
+        let matches = heritageSources.filter((item) => item[0] === region && item[1] === code && (!needle || item.slice(2,4).join(" ").toLocaleLowerCase().includes(needle)));
+        const fallbacks = region === "EU"
+          ? [[region,code,"CENL directory of European national libraries","Authoritative member directory · country links","https://www.cenl.org/member-libraries/"],[region,code,"Archives Portal Europe","Cross-border archival finding aids; participating coverage varies","https://www.archivesportaleurope.net/"],[region,code,"Europeana","Interactive cultural-heritage query; API collection requires a separate key","https://www.europeana.eu/en/search?query={q}"]]
+          : [[region,code,"IFLA Library Map of the World","Worldwide library-sector discovery; not a complete national catalogue","https://librarymap.ifla.org/"],[region,code,"International Council on Archives","Worldwide archival-network starting point; not a complete holdings search","https://www.ica.org/"],[region,code,"Open Library","International interactive book search; country coverage varies","https://openlibrary.org/search?q={q}"]];
+        if (!matches.length && !needle) matches = fallbacks;
+        heritageCount.textContent = `${matches.length} source${matches.length === 1 ? "" : "s"}`;
+        heritageStatus.textContent = heritageSources.some((item) => item[0] === region && item[1] === code)
+          ? `Curated national or regional sources for ${heritageCountryName(code)}. Links marked “Verified query search” receive the current query; other links open an official landing page.`
+          : `No country-specific source has been curated here yet. Showing honest international discovery fallbacks for ${heritageCountryName(code)}; this is a coverage gap, not evidence that no library or archive exists.`;
+        heritageDirectory.innerHTML = matches.map(([, , name, note, url]) => {
+          const carriesQuery = url.includes("{q}"), href = url.replace("{q}", encodeURIComponent(query));
+          return `<a class="launch exchange-card" target="_blank" rel="noopener noreferrer" href="${esc(safeHref(href))}"><strong>${esc(name)}</strong><div class="exchange-meta">${esc(regionNames[region])} · ${esc(heritageCountryName(code))}</div><small>${esc(note)}. ${carriesQuery ? "Current query is preserved." : "Open the destination and enter the query there."}</small></a>`;
+        }).join("") || "<p>No sources match this filter.</p>";
+      }
+      heritageRegion.addEventListener("change", () => renderHeritageCountries());
+      heritageCountry.addEventListener("change", renderHeritageDirectory);
+      heritageFilter.addEventListener("input", renderHeritageDirectory);
       function renderMarketCountries() {
         const group = marketContinent.value, previous = marketCountry.value;
         const visible = group === "ALL" ? countries : countries.filter(([code]) => continentGroups[group]?.has(code));
@@ -1139,15 +1260,20 @@
       }
       function updateMarketLinks() {
         const place = marketPlaceText(), category = marketCategory.value;
-        const mapTerms = { markets: "local market farmers market bazaar public market produce market", hospitals: "hospital", exchanges: "stock exchange", property: "real estate", places: "shops services" };
+        const mapTerms = { markets: "local market farmers market bazaar public market produce market", libraries: "library archive", weather: "weather station", hospitals: "hospital", exchanges: "stock exchange", property: "real estate", places: "shops services" };
         marketMapLink.href = `https://www.openstreetmap.org/search?query=${encodeURIComponent(`${mapTerms[category]} ${place}`)}`;
         if (category === "markets") {
           const [sourceName, sourceUrl] = officialMarketSource(marketCountry.value);
           marketOfficialLink.href = sourceUrl;
           marketOfficialLink.setAttribute("target", "_blank");
           marketOfficialLink.textContent = `Open ${sourceName}`;
+        } else if (category === "weather") {
+          const [sourceName, sourceUrl] = officialWeatherSource(marketCountry.value);
+          marketOfficialLink.href = sourceUrl;
+          marketOfficialLink.setAttribute("target", "_blank");
+          marketOfficialLink.textContent = `Open ${sourceName}`;
         } else {
-          const section = { hospitals: "#hospitalHeading", exchanges: "#exchangeHeading", property: "#propertyHeading", places: "#placesHeading" }[category];
+          const section = { libraries: "#heritageHeading", hospitals: "#hospitalHeading", exchanges: "#exchangeHeading", property: "#propertyHeading", places: "#placesHeading" }[category];
           marketOfficialLink.href = section;
           marketOfficialLink.removeAttribute("target");
           marketOfficialLink.textContent = "Open Search Owl’s verified category directory";
@@ -1161,6 +1287,18 @@
           renderExchangeDirectory(country);
           document.querySelector("#exchangeHeading").scrollIntoView({ behavior: "smooth" });
           marketStatus.textContent = `Showing verified exchange-directory entries matching ${country}. Countries without a listed exchange may use a regional venue; Search Owl does not invent a local exchange.`;
+          return;
+        }
+        if (marketCategory.value === "libraries") {
+          heritageRegion.value = marketContinent.value === "ALL" ? "EU" : marketContinent.value;
+          renderHeritageCountries(marketContinent.value === "PO" && marketCountry.value !== "AQ" ? "ARCTIC" : marketCountry.value);
+          document.querySelector("#heritageHeading").scrollIntoView({ behavior: "smooth" });
+          marketStatus.textContent = `Showing curated library, archive, and digital-collection sources for ${countryNames.of(marketCountry.value) || "the selected polar region"}. Incomplete country coverage is labeled rather than invented.`;
+          return;
+        }
+        if (marketCategory.value === "weather") {
+          const [sourceName] = officialWeatherSource(marketCountry.value);
+          marketStatus.textContent = `Open ${sourceName} for current official warnings affecting ${marketPlaceText()}. Search Owl links to the issuing authority but does not claim a global live alert feed, “no alerts” status, issue time, expiry, or timezone on its own.`;
           return;
         }
         if (marketCategory.value !== "markets") {
@@ -1264,6 +1402,20 @@
       };
       renderPlacesDirectory();
       q.value = new URLSearchParams(location.search).get("q") || "";
+      renderHeritageCountries("FR");
+      const zodiacSigns = ["Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"],
+        horoscopeOpeners = ["Let curiosity choose the first branch today.","A quiet detail may be more useful than the loudest result.","Keep one window open for a pleasant surprise.","A careful second look could reveal a better path."],
+        horoscopeActions = ["Organize one small corner, then explore something new.","Ask a generous question and leave room for the answer.","Revisit an old idea with fresher search terms.","Balance a practical task with a little wonder."],
+        zodiacSign = document.querySelector("#zodiacSign"), horoscopeDate = document.querySelector("#horoscopeDate"), horoscopeText = document.querySelector("#horoscopeText");
+      zodiacSign.innerHTML = zodiacSigns.map((sign) => `<option>${sign}</option>`).join("");
+      function showDailyHoroscope() {
+        const today = new Date(), day = today.toISOString().slice(0, 10), sign = zodiacSign.value, seed = [...`${day}${sign}`].reduce((sum, char) => sum + char.codePointAt(0), 0);
+        horoscopeDate.textContent = new Intl.DateTimeFormat(undefined, { dateStyle: "long" }).format(today);
+        horoscopeText.textContent = `${sign}: ${horoscopeOpeners[seed % horoscopeOpeners.length]} ${horoscopeActions[(seed * 7) % horoscopeActions.length]} Treat this as a playful prompt, not a forecast.`;
+      }
+      zodiacSign.addEventListener("change", showDailyHoroscope);
+      document.querySelector("#showHoroscope").addEventListener("click", showDailyHoroscope);
+      showDailyHoroscope();
       let currentTopic = sessionStorage.getItem("searchOwlCurrentTopic") || "";
       const showCurrentTopic = () => {
         topicStatus.textContent = currentTopic
@@ -1388,6 +1540,7 @@
               `<a class="launch" target="_blank" rel="noopener" href="${url.replace("{q}", encodeURIComponent(value))}">${esc(name)}<small>${esc(note)}</small></a>`,
           )
           .join("");
+        renderHeritageDirectory();
       }
       renderLaunches();
       const translateUrl = (text) =>
