@@ -79,7 +79,11 @@ const catalog = candidates
   .map((candidate) => {
     const owl = { ...candidate, ...metadataByFile.get(candidate.fileName.toLocaleLowerCase("en")), ...photoOverrides.get(candidate.scientific) };
     owl.mediaType = historicalArtworkTaxa.has(candidate.scientific) ? "historical illustration" : (owl.mediaType || "photograph");
-    if (owl.mediaType === "historical illustration") owl.mediaNote = "Historical illustration — we haven’t found a freely reusable photograph for this species.";
+    if (owl.mediaType === "historical illustration") {
+      owl.mediaNote = candidate.scientific === "Uroglaux dimorpha"
+        ? "Historical illustration shown for clarity; the freely reusable photograph we found is obscured by branches."
+        : "Historical illustration — we haven’t found a freely reusable photograph for this species.";
+    }
     return owl;
   })
   .filter((item) => item.imageUrl && item.sourceUrl && item.creator && item.license)

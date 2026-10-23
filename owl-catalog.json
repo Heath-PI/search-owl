@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-23T05:08:47.934Z",
+  "generatedAt": "2026-10-23T05:11:05.515Z",
   "source": "Wikidata owl taxa (Strigiformes) with licensed Wikimedia Commons photographs and clearly labeled historical illustrations",
   "timezone": "America/New_York",
   "epoch": "2026-10-22",
@@ -3084,7 +3084,7 @@
       "licenseUrl": "https://commons.wikimedia.org/wiki/File:Uroglaux_dimorpha.jpg",
       "sourceDate": "1875",
       "mediaType": "historical illustration",
-      "mediaNote": "Historical illustration — we haven’t found a freely reusable photograph for this species."
+      "mediaNote": "Historical illustration shown for clarity; the freely reusable photograph we found is obscured by branches."
     },
     {
       "name": "long-whiskered owlet",

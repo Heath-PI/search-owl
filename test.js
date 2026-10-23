@@ -35,7 +35,7 @@ test("daily owl catalog contains distinct, attributed and classified species ima
   assert.equal(papuan.mediaType, "historical illustration");
   assert.equal(papuan.sourceDate, "1875");
   assert.match(papuan.sourceUrl, /Uroglaux_dimorpha\.jpg/);
-  assert.match(papuan.mediaNote, /freely reusable photograph/);
+  assert.equal(papuan.mediaNote, "Historical illustration shown for clarity; the freely reusable photograph we found is obscured by branches.");
   assert.equal(new Set(catalog.owls.map((owl) => owl.scientific)).size, catalog.count);
   assert.equal(new Set(catalog.owls.map((owl) => owl.fileName.toLowerCase())).size, catalog.count);
   for (const owl of catalog.owls) assert.ok(owl.name && owl.scientific && owl.imageUrl && owl.sourceUrl && owl.creator && owl.license && owl.mediaType);
