@@ -2,7 +2,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
-const { providers, capabilities, buildContext, sceneQueryAnchors, sceneImageMatches } = require("./server");
+const { providers, capabilities, buildContext, sceneQueryAnchors, sceneImageMatches, photoOwlCatalog } = require("./server");
 
 test("isolated package contains only approved deployable files", () => {
   const allowed = new Set([
@@ -23,14 +23,20 @@ test("isolated package contains only approved deployable files", () => {
   ]);
   assert.deepEqual(fs.readdirSync(__dirname).filter((name) => name !== ".git").sort(), [...allowed].sort());
 });
-test("daily owl catalog contains distinct, attributed species photographs", () => {
-  const catalog = JSON.parse(fs.readFileSync(path.join(__dirname, "owl-catalog.json"), "utf8"));
+test("daily owl catalog contains distinct, attributed and classified species images", () => {
+  const catalog = photoOwlCatalog();
   assert.equal(catalog.timezone, "America/New_York");
   assert.equal(catalog.count, catalog.owls.length);
-  assert.ok(catalog.count >= 230);
+  assert.equal(catalog.count, 235);
+  assert.equal(catalog.owls.filter((owl) => owl.mediaType === "photograph").length, 197);
+  assert.equal(catalog.owls.filter((owl) => owl.mediaType === "historical illustration").length, 38);
+  const papuan = catalog.owls.find((owl) => owl.scientific === "Uroglaux dimorpha");
+  assert.equal(papuan.creator, "Mikael Bauer");
+  assert.equal(papuan.mediaType, "photograph");
+  assert.match(papuan.sourceUrl, /Mikael_Bauer/);
   assert.equal(new Set(catalog.owls.map((owl) => owl.scientific)).size, catalog.count);
   assert.equal(new Set(catalog.owls.map((owl) => owl.fileName.toLowerCase())).size, catalog.count);
-  for (const owl of catalog.owls) assert.ok(owl.name && owl.scientific && owl.imageUrl && owl.sourceUrl && owl.creator && owl.license);
+  for (const owl of catalog.owls) assert.ok(owl.name && owl.scientific && owl.imageUrl && owl.sourceUrl && owl.creator && owl.license && owl.mediaType);
   const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
   assert.match(html, /America\/New_York/);
   assert.match(html, /Choose an owl/);
@@ -54,7 +60,7 @@ test("context pictures reject document covers and require title relevance", () =
 test("public page preserves approved identity and perched owl without the unwanted honorific", () => {
   const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
   assert.match(html, /Intensity is our priority/);
-  assert.match(html, /featured owl photograph/);
+  assert.match(html, /featured owl image/);
   assert.match(html, /Created by Heath\./);
   assert.doesNotMatch(html, /Master Heath/i);
   assert.match(html, /We use Google Translate/);

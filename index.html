@@ -448,7 +448,7 @@
       </style>
       <header
         class="owlHero"
-        aria-label="Search Owl — featured owl photograph"
+        aria-label="Search Owl — featured owl image"
       >
         <div class="owlHeroCopy">
           <h1>Search Owl</h1>
@@ -753,7 +753,7 @@
       <footer class="panel note">
         <b>Created by Heath.</b>
         Google Translate supplies optional translations; quality can vary. Each
-        featured owl photograph’s creator, license, and source are shown with
+        featured owl image’s creator, license, and source are shown with
         the image.
       </footer>
     </main>
@@ -1724,7 +1724,8 @@
           const automaticIndex = ((dayNumber(today) - dayNumber(catalog.epoch)) % catalog.owls.length + catalog.owls.length) % catalog.owls.length;
           owlPicker.innerHTML = `<option value="daily">Today’s owl — automatic</option>${catalog.owls.map((owl, index) => `<option value="${index}">${esc(owl.name)} (${esc(owl.scientific)})</option>`).join("")}`;
           owlPicker.disabled = false;
-          owlPickerNote.textContent = `${catalog.count} verified species with ${catalog.count} distinct Wikimedia Commons photographs. Automatic rotation changes at midnight America/New_York time; a manual pick lasts until the next New York day.`;
+          const illustrationCount = catalog.owls.filter((owl) => owl.mediaType === "historical illustration").length;
+          owlPickerNote.textContent = `${catalog.count} verified species with distinct Wikimedia Commons images (${catalog.count - illustrationCount} photographs and ${illustrationCount} clearly labeled historical illustrations). Automatic rotation changes at midnight America/New_York time; a manual pick lasts until the next New York day.`;
           const saved = JSON.parse(localStorage.getItem("searchOwlSelection") || "null");
           const chosen = saved?.date === today && Number.isInteger(saved.index) ? saved.index : automaticIndex;
           let owlLoadToken = 0;
@@ -1734,8 +1735,9 @@
             image.onload = () => {
               if (token !== owlLoadToken) return;
               owlHero.style.backgroundImage = `linear-gradient(90deg, rgba(2,10,18,.76), rgba(2,10,18,.08)), linear-gradient(180deg, rgba(2,10,18,.01) 42%, rgba(2,10,18,.78) 100%), url("${owl.imageUrl.replace(/["\\]/g, "")}")`;
-              owlHero.setAttribute("aria-label", `Search Owl — ${owl.name} photograph`);
-              owlCredit.innerHTML = `<b>${esc(owl.name)}</b> · <i>${esc(owl.scientific)}</i><br>Photograph by ${esc(owl.creator)} · <a href="${esc(safeHref(owl.licenseUrl))}" target="_blank" rel="noopener noreferrer">${esc(owl.license)}</a> · <a href="${esc(safeHref(owl.sourceUrl))}" target="_blank" rel="noopener noreferrer">source</a>`;
+              const mediaLabel = owl.mediaType === "historical illustration" ? "Historical illustration" : "Photograph";
+              owlHero.setAttribute("aria-label", `Search Owl — ${owl.name} ${mediaLabel.toLowerCase()}`);
+              owlCredit.innerHTML = `<b>${esc(owl.name)}</b> · <i>${esc(owl.scientific)}</i><br>${mediaLabel} by ${esc(owl.creator)}${owl.sourceDate ? ` · ${esc(owl.sourceDate)}` : ""} · <a href="${esc(safeHref(owl.licenseUrl))}" target="_blank" rel="noopener noreferrer">${esc(owl.license)}</a> · <a href="${esc(safeHref(owl.sourceUrl))}" target="_blank" rel="noopener noreferrer">source</a>${owl.mediaNote ? `<br><small>${esc(owl.mediaNote)}</small>` : ""}`;
             };
             image.onerror = () => {
               if (token !== owlLoadToken) return;

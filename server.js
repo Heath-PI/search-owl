@@ -5,6 +5,9 @@ const { performance } = require("node:perf_hooks");
 const HOST = process.env.HOST || "0.0.0.0",
   PORT = Number(process.env.PORT || 31978),
   HTML = path.join(__dirname, "index.html");
+function photoOwlCatalog() {
+  return JSON.parse(fs.readFileSync(path.join(__dirname, "owl-catalog.json"), "utf8"));
+}
 let farmersMarketCache = { fetchedAt: 0, rows: [] };
 async function fetchJson(url, options = {}, timeoutMs = 8000) {
   const controller = new AbortController(),
@@ -1103,7 +1106,7 @@ function start() {
     if (url.pathname === "/search-owl-icon.png")
       return send(res, 200, "image/png", fs.readFileSync(path.join(__dirname, "search-owl-icon.png")));
     if (url.pathname === "/owl-catalog.json")
-      return send(res, 200, "application/json; charset=utf-8", fs.readFileSync(path.join(__dirname, "owl-catalog.json")));
+      return send(res, 200, "application/json; charset=utf-8", JSON.stringify(photoOwlCatalog()));
     if (url.pathname === "/api/farmers-markets") {
       const state = String(url.searchParams.get("state") || "").toUpperCase();
       const locality = String(url.searchParams.get("locality") || "").trim().toLocaleLowerCase();
@@ -1293,4 +1296,5 @@ module.exports = {
   commonsSceneImages,
   sceneQueryAnchors,
   sceneImageMatches,
+  photoOwlCatalog,
 };

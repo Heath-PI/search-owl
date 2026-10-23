@@ -14,6 +14,17 @@ LIMIT 600`;
 
 const stripHtml = (value = "") =>
   value.replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/\s+/g, " ").trim();
+const historicalArtworkTaxa = new Set("Bubo bouvieri|Bubo milesi|Bubo poensis|Bubo shelleyi|Glaucidium castaneum|Glaucidium cobanense|Glaucidium gnoma|Glaucidium griseiceps|Glaucidium sjostedti|Jubula lettii|Megascops barbarus|Megascops guatemalae|Ninox forbesi|Ninox fusca|Ninox hantu|Ninox hypogramma|Ninox jacquinoti|Ninox natalis|Ninox ochracea|Ninox rudolfi|Ninox squamipila|Ninox variegata|Otus alfredi|Otus balli|Otus brucei|Otus gurneyi|Otus icterorhynchus|Otus insularis|Otus magicus|Otus manadensis|Otus silvicola|Otus socotranus|Pyrroglaux podargina|Scotopelia ussheri|Strix bartelsi|Strix davidi|Tyto aurantia|Tyto detorta".split("|"));
+const photoOverrides = new Map([["Uroglaux dimorpha", {
+  fileName: "Uroglaux dimorpha - Mikael Bauer - 109950815.jpeg",
+  imageUrl: "https://upload.wikimedia.org/wikipedia/commons/a/a2/Uroglaux_dimorpha_-_Mikael_Bauer_-_109950815.jpeg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+  sourceUrl: "https://commons.wikimedia.org/wiki/File:Uroglaux_dimorpha_-_Mikael_Bauer_-_109950815.jpeg",
+  creator: "Mikael Bauer",
+  license: "CC BY 4.0",
+  licenseUrl: "https://creativecommons.org/licenses/by/4.0",
+  sourceDate: "2010-10-31",
+  mediaType: "photograph",
+}]]);
 
 const response = await fetch(
   `https://query.wikidata.org/sparql?format=json&query=${encodeURIComponent(sparql)}`,
@@ -49,7 +60,7 @@ for (let index = 0; index < candidates.length; index += 50) {
     format: "json",
     formatversion: "2",
     prop: "imageinfo",
-    iiprop: "url|extmetadata|mime",
+    iiprop: "url|extmetadata|mime|timestamp",
     iiurlwidth: "1600",
     titles: batch.map((item) => `File:${item.fileName}`).join("|"),
   });
@@ -61,28 +72,35 @@ for (let index = 0; index < candidates.length; index += 50) {
   for (const page of pages) {
     const info = page.imageinfo?.[0];
     if (!info || !/^image\/(jpeg|png|webp)$/i.test(info.mime || "")) continue;
+    const metadata = info.extmetadata || {};
     metadataByFile.set(page.title.replace(/^File:/, "").toLocaleLowerCase("en"), {
       imageUrl: info.thumburl || info.url,
       sourceUrl: info.descriptionurl,
-      creator: stripHtml(info.extmetadata?.Artist?.value) || "Wikimedia Commons contributor",
-      license: stripHtml(info.extmetadata?.LicenseShortName?.value) || "See source for license",
-      licenseUrl: info.extmetadata?.LicenseUrl?.value || info.descriptionurl,
+      creator: stripHtml(metadata.Artist?.value) || "Wikimedia Commons contributor",
+      license: stripHtml(metadata.LicenseShortName?.value) || "See source for license",
+      licenseUrl: metadata.LicenseUrl?.value || info.descriptionurl,
+      sourceDate: stripHtml(metadata.DateTimeOriginal?.value || ""),
     });
   }
 }
 
 const catalog = candidates
-  .map((candidate) => ({ ...candidate, ...metadataByFile.get(candidate.fileName.toLocaleLowerCase("en")) }))
+  .map((candidate) => {
+    const owl = { ...candidate, ...metadataByFile.get(candidate.fileName.toLocaleLowerCase("en")), ...photoOverrides.get(candidate.scientific) };
+    owl.mediaType = historicalArtworkTaxa.has(candidate.scientific) ? "historical illustration" : (owl.mediaType || "photograph");
+    if (owl.mediaType === "historical illustration") owl.mediaNote = "Historical illustration — we haven’t found a freely reusable photograph for this species.";
+    return owl;
+  })
   .filter((item) => item.imageUrl && item.sourceUrl && item.creator && item.license)
   .slice(0, 250);
 
-if (catalog.length < 230) throw new Error(`Only ${catalog.length} validated owl species were available`);
+if (catalog.length < 230) throw new Error(`Only ${catalog.length} validated owl species images were available`);
 await fs.writeFile("owl-catalog.json", `${JSON.stringify({
   generatedAt: new Date().toISOString(),
-  source: "Wikidata owl taxa (Strigiformes) with Wikimedia Commons P18 photographs",
+  source: "Wikidata owl taxa (Strigiformes) with licensed Wikimedia Commons photographs and clearly labeled historical illustrations",
   timezone: "America/New_York",
   epoch: "2026-10-22",
   count: catalog.length,
   owls: catalog,
 }, null, 2)}\n`);
-console.log(`Wrote ${catalog.length} distinct owl species with distinct licensed image files.`);
+console.log(`Wrote ${catalog.length} distinct owl species with licensed, classified image files.`);
