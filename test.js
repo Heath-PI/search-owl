@@ -191,6 +191,8 @@ test("context decoration stays outside the centered owl and remains useful on na
   assert.match(html, /Hospitals & health facilities/);
   assert.match(html, /Local markets, farmers markets & bazaars/);
   assert.match(html, /public market produce market/);
+  assert.match(html, /does not substitute[\s\S]*generic decoration for a facility photo/);
+  assert.match(html, /Map, contributed photos when available, and directions/);
   assert.match(html, /renderExchangeDirectory\(country\)/);
   assert.match(html, /U\.S\. searches return actual USDA directory records/);
   assert.match(html, /AK:"Alaska"/);

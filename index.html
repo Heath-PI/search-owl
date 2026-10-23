@@ -627,7 +627,10 @@
             Choose a continent or world region, country or territory, category, then narrow by state, province, region, county, district, or locality.
             U.S. searches return actual USDA directory records. Elsewhere, Search Owl opens a location-specific
             map search and the best available official price or directory source. Map records and market hours can
-            be incomplete or out of date, so confirm details with the market. A market location is not a commodity-price report.
+            be incomplete or out of date, so confirm details with the market. Map destinations may provide a current
+            place photo when contributors have tied one to the exact name and address; Search Owl does not substitute
+            generic decoration for a facility photo. A photo helps identify a place but does not certify its legitimacy,
+            quality, services, or current operation. A market location is not a commodity-price report.
           </p>
           <div class="market-controls">
             <label>Continent or world region<select id="marketContinent"><option value="NA" selected>North America</option><option value="CA">Central America & Caribbean</option><option value="SA">South America</option><option value="EU">Europe</option><option value="ME">Middle East</option><option value="AF">Africa</option><option value="AS">Asia</option><option value="OC">Oceania</option><option value="ALL">Worldwide / all</option></select></label>
@@ -1177,7 +1180,7 @@
           marketStatus.textContent = `${data.count} USDA listing${data.count === 1 ? "" : "s"} matched; ${data.totalInState} total directory records in ${data.stateName}. Official feed snapshot: ${data.directorySnapshotDate}. Showing up to 100. Listings are self-reported; verify current hours and status.`;
           marketResults.innerHTML = data.markets.map((item) => {
             const mapUrl = `https://www.openstreetmap.org/search?query=${encodeURIComponent(item.address || item.name)}`;
-            return `<div class="market-result"><strong>${esc(item.name)}</strong><div class="exchange-meta">${esc(item.address || "Address not supplied")}</div>${item.localityNote ? `<small>${esc(item.localityNote)}</small>` : ""}<small>USDA record updated: ${esc(item.updated || "date not supplied")}. <a target="_blank" rel="noopener noreferrer" href="${esc(mapUrl)}">Map and directions</a></small></div>`;
+            return `<div class="market-result"><strong>${esc(item.name)}</strong><div class="exchange-meta">${esc(item.address || "Address not supplied")}</div>${item.localityNote ? `<small>${esc(item.localityNote)}</small>` : ""}<small>USDA record updated: ${esc(item.updated || "date not supplied")}. <a target="_blank" rel="noopener noreferrer" href="${esc(mapUrl)}">Map, contributed photos when available, and directions</a></small></div>`;
           }).join("") || "<p>No USDA directory records matched that locality. Try the state alone or use the map search; voluntary directory coverage is not exhaustive.</p>";
         } catch (error) {
           marketStatus.textContent = `${error.message} Use the official USDA link or location-specific map search as a fallback.`;
