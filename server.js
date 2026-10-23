@@ -5,6 +5,7 @@ const { performance } = require("node:perf_hooks");
 const HOST = process.env.HOST || "0.0.0.0",
   PORT = Number(process.env.PORT || 31978),
   HTML = path.join(__dirname, "index.html");
+let farmersMarketCache = { fetchedAt: 0, rows: [] };
 async function fetchJson(url, options = {}, timeoutMs = 8000) {
   const controller = new AbortController(),
     timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -38,6 +39,46 @@ async function fetchText(url, options = {}, timeoutMs = 12000) {
   } finally {
     clearTimeout(timer);
   }
+}
+const US_STATE_NAMES = {
+  AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas", CA: "California",
+  CO: "Colorado", CT: "Connecticut", DE: "Delaware", FL: "Florida", GA: "Georgia",
+  HI: "Hawaii", ID: "Idaho", IL: "Illinois", IN: "Indiana", IA: "Iowa",
+  KS: "Kansas", KY: "Kentucky", LA: "Louisiana", ME: "Maine", MD: "Maryland",
+  MA: "Massachusetts", MI: "Michigan", MN: "Minnesota", MS: "Mississippi", MO: "Missouri",
+  MT: "Montana", NE: "Nebraska", NV: "Nevada", NH: "New Hampshire", NJ: "New Jersey",
+  NM: "New Mexico", NY: "New York", NC: "North Carolina", ND: "North Dakota", OH: "Ohio",
+  OK: "Oklahoma", OR: "Oregon", PA: "Pennsylvania", RI: "Rhode Island", SC: "South Carolina",
+  SD: "South Dakota", TN: "Tennessee", TX: "Texas", UT: "Utah", VT: "Vermont",
+  VA: "Virginia", WA: "Washington", WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming",
+  DC: "District of Columbia",
+};
+function marketStateCode(address) {
+  const value = String(address || "");
+  for (const [code, name] of Object.entries(US_STATE_NAMES)) {
+    if (new RegExp(`(?:,|\\s)${name.replace(/ /g, "\\s+")}(?:\\s|,|\\d)`, "i").test(value)) return code;
+  }
+  const abbreviation = value.match(/,\s*([A-Z]{2})(?:\s*,?\s*\d{5}|\s*,|$)/);
+  return abbreviation && US_STATE_NAMES[abbreviation[1]] ? abbreviation[1] : "";
+}
+async function getFarmersMarkets() {
+  if (farmersMarketCache.rows.length) return farmersMarketCache.rows;
+  const data = JSON.parse(fs.readFileSync(path.join(__dirname, "farmers-markets-us.json"), "utf8"));
+  farmersMarketCache = {
+    fetchedAt: Date.now(),
+    sourceRetrieved: data.retrieved,
+    rows: (data.markets || []).map((item) => ({
+      id: String(item.id || ""),
+      name: String(item.n || "Farmers market"),
+      address: String(item.a || ""),
+      localityNote: String(item.d || ""),
+      longitude: Number(item.x) || null,
+      latitude: Number(item.y) || null,
+      updated: String(item.u || ""),
+      state: String(item.s || ""),
+    })),
+  };
+  return farmersMarketCache.rows;
 }
 const decodeXml = (value) =>
   String(value || "")
@@ -981,6 +1022,8 @@ function send(res, status, type, body) {
   });
   res.end(body);
 }
+const json = (res, status, body) =>
+  send(res, status, "application/json; charset=utf-8", JSON.stringify(body));
 const requestBuckets = new Map();
 function allowed(req) {
   const key = String(
@@ -1033,6 +1076,32 @@ function start() {
       return send(res, 200, "image/png", fs.readFileSync(path.join(__dirname, "search-owl-icon.png")));
     if (url.pathname === "/owl-catalog.json")
       return send(res, 200, "application/json; charset=utf-8", fs.readFileSync(path.join(__dirname, "owl-catalog.json")));
+    if (url.pathname === "/api/farmers-markets") {
+      const state = String(url.searchParams.get("state") || "").toUpperCase();
+      const locality = String(url.searchParams.get("locality") || "").trim().toLocaleLowerCase();
+      if (!US_STATE_NAMES[state]) return json(res, 400, { error: "Choose a U.S. state." });
+      try {
+        const rows = await getFarmersMarkets();
+        const matches = rows.filter((item) =>
+          item.state === state &&
+          (!locality || `${item.name} ${item.address} ${item.localityNote}`.toLocaleLowerCase().includes(locality)),
+        );
+        return json(res, 200, {
+          source: "USDA Agricultural Marketing Service Local Food Directories",
+          sourceUrl: "https://www.ams.usda.gov/local-food-directories/farmersmarkets",
+          state,
+          stateName: US_STATE_NAMES[state],
+          locality: locality || null,
+          count: matches.length,
+          totalInState: rows.filter((item) => item.state === state).length,
+          directorySnapshotDate: farmersMarketCache.sourceRetrieved,
+          retrievedAt: new Date().toISOString(),
+          markets: matches.slice(0, 100),
+        });
+      } catch (error) {
+        return json(res, 502, { error: `USDA directory is temporarily unavailable: ${error.message}` });
+      }
+    }
     if (!allowed(req))
       return send(
         res,

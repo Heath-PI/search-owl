@@ -314,6 +314,14 @@
       .exchange-card { min-height: 126px; }
       .exchange-card strong { color: #8ed9ff; }
       .exchange-meta { color: #efb84b; font-size: 13px; margin: 6px 0; }
+      .market-finder { margin: 18px 0; padding: 16px; border: 1px solid #315a68; border-radius: 12px; background: rgba(5, 25, 34, 0.62); }
+      .market-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+      .market-controls label { color: #d8e8ef; font-size: 13px; }
+      .market-controls select, .market-controls input { width: 100%; margin-top: 5px; padding: 10px; border-radius: 8px; border: 1px solid #547684; background: #071c25; color: #fff; }
+      .market-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+      .market-results { margin-top: 14px; }
+      .market-result { padding: 12px 0; border-top: 1px solid #294a58; }
+      .market-result strong { color: #8ed9ff; }
       .hidden {
         display: none;
       }
@@ -351,6 +359,7 @@
         }
         .topic-wallpaper { grid-template-columns: 1fr; }
         .topic-picture { min-height: 160px; }
+        .market-controls { grid-template-columns: 1fr; }
       }
       @media (prefers-reduced-motion: reduce) {
         body::before,
@@ -612,6 +621,29 @@
           market type, and observation date. This directory provides nine no-cost official
           destinations; availability varies and gaps are never interpolated.
         </p>
+        <div class="market-finder" aria-labelledby="marketFinderHeading">
+          <h3 id="marketFinderHeading">Explore local services by continent, country, and area</h3>
+          <p class="note">
+            Choose a continent or world region, country or territory, category, then narrow by state, province, region, county, district, or locality.
+            U.S. searches return actual USDA directory records. Elsewhere, Search Owl opens a location-specific
+            map search and the best available official price or directory source. Map records and market hours can
+            be incomplete or out of date, so confirm details with the market. A market location is not a commodity-price report.
+          </p>
+          <div class="market-controls">
+            <label>Continent or world region<select id="marketContinent"><option value="NA" selected>North America</option><option value="CA">Central America & Caribbean</option><option value="SA">South America</option><option value="EU">Europe</option><option value="ME">Middle East</option><option value="AF">Africa</option><option value="AS">Asia</option><option value="OC">Oceania</option><option value="ALL">Worldwide / all</option></select></label>
+            <label>Country or territory<select id="marketCountry"></select></label>
+            <label>Category<select id="marketCategory"><option value="markets">Local markets, farmers markets & bazaars</option><option value="hospitals">Hospitals & health facilities</option><option value="exchanges">Stock exchanges</option><option value="property">Real estate</option><option value="places">Nearby places & amenities</option></select></label>
+            <label id="marketSubdivisionLabel">State<select id="marketSubdivision"></select></label>
+            <label>County, district, city, or locality<input id="marketLocality" type="search" placeholder="Example: Durham County or Asheville" /></label>
+          </div>
+          <div class="market-actions">
+            <button id="findMarkets" type="button">Find local resources</button>
+            <a id="marketMapLink" class="launch" target="_blank" rel="noopener noreferrer">Open location search on OpenStreetMap</a>
+            <a id="marketOfficialLink" class="launch" target="_blank" rel="noopener noreferrer">Open official market source</a>
+          </div>
+          <p id="marketStatus" class="note" role="status"></p>
+          <div id="marketResults" class="market-results"></div>
+        </div>
         <div id="agDirectory" class="grid"></div>
         <h3>Verified recent-history example</h3>
         <p class="note">
@@ -1046,6 +1078,118 @@
         ["Worldwide","HERE WeGo","Map and place-search handoff","https://wego.here.com/search/{q}"],
         ["Supported markets","Yelp","Local business directory handoff","https://www.yelp.com/search?find_desc={q}"],
       ];
+      const countryCodes = "AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BV BW BY BZ CA CC CD CF CG CH CI CK CL CM CN CO CR CU CV CW CX CY CZ DE DJ DK DM DO DZ EC EE EG EH ER ES ET FI FJ FK FM FO FR GA GB GD GE GF GG GH GI GL GM GN GP GQ GR GS GT GU GW GY HK HM HN HR HT HU ID IE IL IM IN IO IQ IR IS IT JE JM JO JP KE KG KH KI KM KN KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MF MG MH MK ML MM MN MO MP MQ MR MS MT MU MV MW MX MY MZ NA NC NE NF NG NI NL NO NP NR NU NZ OM PA PE PF PG PH PK PL PM PN PR PS PT PW PY QA RE RO RS RU RW SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SY SZ TC TD TF TG TH TJ TK TL TM TN TO TR TT TV TW TZ UA UG UM US UY UZ VA VC VE VG VI VN VU WF WS YE YT ZA ZM ZW".split(" ");
+      const countryNames = new Intl.DisplayNames(["en"], { type: "region" });
+      const usStates = {
+        AL:"Alabama",AK:"Alaska",AZ:"Arizona",AR:"Arkansas",CA:"California",CO:"Colorado",CT:"Connecticut",DE:"Delaware",FL:"Florida",GA:"Georgia",HI:"Hawaii",ID:"Idaho",IL:"Illinois",IN:"Indiana",IA:"Iowa",KS:"Kansas",KY:"Kentucky",LA:"Louisiana",ME:"Maine",MD:"Maryland",MA:"Massachusetts",MI:"Michigan",MN:"Minnesota",MS:"Mississippi",MO:"Missouri",MT:"Montana",NE:"Nebraska",NV:"Nevada",NH:"New Hampshire",NJ:"New Jersey",NM:"New Mexico",NY:"New York",NC:"North Carolina",ND:"North Dakota",OH:"Ohio",OK:"Oklahoma",OR:"Oregon",PA:"Pennsylvania",RI:"Rhode Island",SC:"South Carolina",SD:"South Dakota",TN:"Tennessee",TX:"Texas",UT:"Utah",VT:"Vermont",VA:"Virginia",WA:"Washington",WV:"West Virginia",WI:"Wisconsin",WY:"Wyoming",DC:"District of Columbia"
+      };
+      const canadaProvinces = ["Alberta","British Columbia","Manitoba","New Brunswick","Newfoundland and Labrador","Northwest Territories","Nova Scotia","Nunavut","Ontario","Prince Edward Island","Quebec","Saskatchewan","Yukon"];
+      const mexicoStates = ["Aguascalientes","Baja California","Baja California Sur","Campeche","Chiapas","Chihuahua","Coahuila","Colima","Durango","Guanajuato","Guerrero","Hidalgo","Jalisco","Mexico City","México State","Michoacán","Morelos","Nayarit","Nuevo León","Oaxaca","Puebla","Querétaro","Quintana Roo","San Luis Potosí","Sinaloa","Sonora","Tabasco","Tamaulipas","Tlaxcala","Veracruz","Yucatán","Zacatecas"];
+      const euCodes = new Set("AT BE BG HR CY CZ DK EE FI FR DE GR HU IE IT LV LT LU MT NL PL PT RO SK SI ES SE".split(" "));
+      const continentGroups = {
+        NA: new Set("US CA MX GL PM BM".split(" ")),
+        CA: new Set("BZ CR GT HN NI PA SV AG AI AW BB BQ BS CU CW DM DO GD GP HT JM KN KY LC MF MQ MS PR SX TC TT VC VG VI".split(" ")),
+        SA: new Set("AR BO BR CL CO EC FK GF GY PE PY SR UY VE".split(" ")),
+        EU: new Set("AD AL AT AX BA BE BG BY CH CY CZ DE DK EE ES FI FO FR GB GG GI GR HR HU IE IM IS IT JE LI LT LU LV MC MD ME MK MT NL NO PL PT RO RS RU SE SI SJ SK SM UA VA".split(" ")),
+        ME: new Set("AE BH EG IL IQ IR JO KW LB OM PS QA SA SY TR YE".split(" ")),
+        AF: new Set("AO BF BI BJ BW CD CF CG CI CM CV DJ DZ EH ER ET GA GH GM GN GQ GW KE KM LR LS LY MA MG ML MR MU MW MZ NA NE NG RE RW SC SD SH SL SN SO SS ST SZ TD TG TN TZ UG YT ZA ZM ZW".split(" ")),
+        AS: new Set("AF AM AZ BD BN BT CC CN CX GE HK ID IN IO JP KG KH KP KR KZ LA LK MM MN MO MV MY NP PH PK SG TH TJ TL TM TW UZ VN".split(" ")),
+        OC: new Set("AS AU BV CK FJ FM GU HM KI MH MP NC NF NR NU NZ PF PG PN PW SB TF TK TO TV UM VU WF WS".split(" ")),
+      };
+      const officialMarketSource = (code) => {
+        if (code === "US") return ["USDA Local Food Directories", "https://www.ams.usda.gov/local-food-directories/farmersmarkets"];
+        if (code === "CA") return ["Agriculture and Agri-Food Canada market information", "https://agriculture.canada.ca/en/sector/horticulture/market-information"];
+        if (code === "MX") return ["Mexico SNIIM wholesale market prices", "https://www.economia-sniim.gob.mx/"];
+        if (code === "TH") return ["Thailand Department of Internal Trade prices", "https://pricelist.dit.go.th/"];
+        if (code === "VN") return ["Vietnam IPSARD agricultural price database", "https://agro.gov.vn/vn/nguonwmy.aspx"];
+        if (code === "LA") return ["FAO/GIEWS Laos country coverage", "https://www.fao.org/giews/countrybrief/country.jsp?code=LAO"];
+        if (euCodes.has(code)) return ["European Commission Agri-food Data Portal", "https://agridata.ec.europa.eu/"];
+        return ["FAO Food Price Monitoring and Analysis", "https://fpma.fao.org/giews/fpmat4/#/dashboard/home"];
+      };
+      const marketContinent = document.querySelector("#marketContinent"),
+        marketCountry = document.querySelector("#marketCountry"),
+        marketCategory = document.querySelector("#marketCategory"),
+        marketSubdivision = document.querySelector("#marketSubdivision"),
+        marketSubdivisionLabel = document.querySelector("#marketSubdivisionLabel"),
+        marketLocality = document.querySelector("#marketLocality"),
+        marketStatus = document.querySelector("#marketStatus"),
+        marketResults = document.querySelector("#marketResults"),
+        marketMapLink = document.querySelector("#marketMapLink"),
+        marketOfficialLink = document.querySelector("#marketOfficialLink");
+      const countries = countryCodes.map((code) => [code, countryNames.of(code) || code]).sort((a, b) => a[1].localeCompare(b[1]));
+      function renderMarketCountries() {
+        const group = marketContinent.value, previous = marketCountry.value;
+        const visible = group === "ALL" ? countries : countries.filter(([code]) => continentGroups[group]?.has(code));
+        marketCountry.innerHTML = visible.map(([code, name]) => `<option value="${code}">${name}</option>`).join("");
+        marketCountry.value = visible.some(([code]) => code === previous) ? previous : visible.some(([code]) => code === "US") ? "US" : visible[0]?.[0] || "US";
+        setSubdivisionChoices();
+      }
+      function setSubdivisionChoices() {
+        const code = marketCountry.value, values = code === "US" ? Object.entries(usStates) : code === "CA" ? canadaProvinces.map((v) => [v, v]) : code === "MX" ? mexicoStates.map((v) => [v, v]) : [["", "Type a province, state, region, or district below"]];
+        marketSubdivisionLabel.firstChild.textContent = code === "US" ? "State" : code === "CA" ? "Province or territory" : code === "MX" ? "State" : "Administrative area";
+        marketSubdivision.innerHTML = values.map(([value, label]) => `<option value="${value}" ${value === "NC" ? "selected" : ""}>${label}</option>`).join("");
+        marketSubdivision.disabled = !values[0][0];
+        updateMarketLinks();
+      }
+      function marketPlaceText() {
+        return [marketLocality.value.trim(), marketSubdivision.value && (usStates[marketSubdivision.value] || marketSubdivision.value), countryNames.of(marketCountry.value)].filter(Boolean).join(", ");
+      }
+      function updateMarketLinks() {
+        const place = marketPlaceText(), category = marketCategory.value;
+        const mapTerms = { markets: "local market farmers market bazaar public market produce market", hospitals: "hospital", exchanges: "stock exchange", property: "real estate", places: "shops services" };
+        marketMapLink.href = `https://www.openstreetmap.org/search?query=${encodeURIComponent(`${mapTerms[category]} ${place}`)}`;
+        if (category === "markets") {
+          const [sourceName, sourceUrl] = officialMarketSource(marketCountry.value);
+          marketOfficialLink.href = sourceUrl;
+          marketOfficialLink.setAttribute("target", "_blank");
+          marketOfficialLink.textContent = `Open ${sourceName}`;
+        } else {
+          const section = { hospitals: "#hospitalHeading", exchanges: "#exchangeHeading", property: "#propertyHeading", places: "#placesHeading" }[category];
+          marketOfficialLink.href = section;
+          marketOfficialLink.removeAttribute("target");
+          marketOfficialLink.textContent = "Open Search Owl’s verified category directory";
+        }
+      }
+      async function findLocalMarkets() {
+        updateMarketLinks();
+        marketResults.innerHTML = "";
+        if (marketCategory.value === "exchanges") {
+          const country = countryNames.of(marketCountry.value);
+          renderExchangeDirectory(country);
+          document.querySelector("#exchangeHeading").scrollIntoView({ behavior: "smooth" });
+          marketStatus.textContent = `Showing verified exchange-directory entries matching ${country}. Countries without a listed exchange may use a regional venue; Search Owl does not invent a local exchange.`;
+          return;
+        }
+        if (marketCategory.value !== "markets") {
+          marketStatus.textContent = `Use the localized map search for ${marketCategory.options[marketCategory.selectedIndex].text.toLocaleLowerCase()} near ${marketPlaceText()}, or open Search Owl’s verified category directory. Coverage varies by country and provider.`;
+          return;
+        }
+        if (marketCountry.value !== "US") {
+          marketStatus.textContent = `Search Owl does not claim a complete official listings feed for ${countryNames.of(marketCountry.value)}. Use the location-specific map search for real mapped markets, and the official source for dated price reports or directories where published.`;
+          return;
+        }
+        marketStatus.textContent = "Loading current USDA directory records…";
+        try {
+          const params = new URLSearchParams({ state: marketSubdivision.value });
+          if (marketLocality.value.trim()) params.set("locality", marketLocality.value.trim());
+          const response = await fetch(`/api/farmers-markets?${params}`), data = await response.json();
+          if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
+          marketStatus.textContent = `${data.count} USDA listing${data.count === 1 ? "" : "s"} matched; ${data.totalInState} total directory records in ${data.stateName}. Official feed snapshot: ${data.directorySnapshotDate}. Showing up to 100. Listings are self-reported; verify current hours and status.`;
+          marketResults.innerHTML = data.markets.map((item) => {
+            const mapUrl = `https://www.openstreetmap.org/search?query=${encodeURIComponent(item.address || item.name)}`;
+            return `<div class="market-result"><strong>${esc(item.name)}</strong><div class="exchange-meta">${esc(item.address || "Address not supplied")}</div>${item.localityNote ? `<small>${esc(item.localityNote)}</small>` : ""}<small>USDA record updated: ${esc(item.updated || "date not supplied")}. <a target="_blank" rel="noopener noreferrer" href="${esc(mapUrl)}">Map and directions</a></small></div>`;
+          }).join("") || "<p>No USDA directory records matched that locality. Try the state alone or use the map search; voluntary directory coverage is not exhaustive.</p>";
+        } catch (error) {
+          marketStatus.textContent = `${error.message} Use the official USDA link or location-specific map search as a fallback.`;
+        }
+      }
+      marketContinent.addEventListener("change", renderMarketCountries);
+      marketCountry.addEventListener("change", setSubdivisionChoices);
+      marketCategory.addEventListener("change", updateMarketLinks);
+      marketSubdivision.addEventListener("change", updateMarketLinks);
+      marketLocality.addEventListener("input", updateMarketLinks);
+      document.querySelector("#findMarkets").addEventListener("click", findLocalMarkets);
+      renderMarketCountries();
       const q = document.querySelector("#query"),
         launches = document.querySelector("#launches"),
         summary = document.querySelector("#summary"),

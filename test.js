@@ -8,6 +8,7 @@ test("isolated package contains only approved deployable files", () => {
   const allowed = new Set([
     ".gitignore",
     "README.md",
+    "farmers-markets-us.json",
     "index.html",
     "opensearch.xml",
     "owl-catalog.json",
@@ -184,6 +185,22 @@ test("context decoration stays outside the centered owl and remains useful on na
   assert.match(html, /World Federation of Exchanges members and affiliates/);
   assert.match(html, /renderExchangeDirectory/);
   assert.match(html, /Agricultural and local-market price sources/);
+  assert.match(html, /Explore local services by continent, country, and area/);
+  assert.match(html, /Central America & Caribbean/);
+  assert.match(html, /Middle East/);
+  assert.match(html, /Hospitals & health facilities/);
+  assert.match(html, /Local markets, farmers markets & bazaars/);
+  assert.match(html, /public market produce market/);
+  assert.match(html, /renderExchangeDirectory\(country\)/);
+  assert.match(html, /U\.S\. searches return actual USDA directory records/);
+  assert.match(html, /AK:"Alaska"/);
+  assert.match(html, /Quebec/);
+  assert.match(html, /Mexico SNIIM wholesale market prices/);
+  assert.match(html, /European Commission Agri-food Data Portal/);
+  assert.match(html, /Open location search on OpenStreetMap/);
+  assert.match(server, /api\/farmers-markets/);
+  assert.match(server, /farmers-markets-us\.json/);
+  assert.match(server, /matches\.slice\(0, 100\)/);
   assert.match(html, /they are not one giant market/);
   assert.match(html, /nine no-cost official/);
   assert.match(html, /FAMA Agri Market Insight/);
