@@ -35,6 +35,10 @@ test("daily owl catalog contains distinct, attributed species photographs", () =
   assert.match(html, /America\/New_York/);
   assert.match(html, /Choose an owl/);
   assert.match(html, /owl-catalog\.json/);
+  assert.match(html, /no other species is silently substituted/);
+  assert.match(html, /token !== owlLoadToken/);
+  const server = fs.readFileSync(path.join(__dirname, "server.js"), "utf8");
+  assert.match(server, /https:\/\/thumb\.wikimedia\.org/);
 });
 test("public page preserves approved identity, attribution and perched owl", () => {
   const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");

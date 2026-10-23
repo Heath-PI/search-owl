@@ -1016,7 +1016,7 @@ function send(res, status, type, body) {
       ? "public, max-age=86400"
       : "no-store",
     "content-security-policy":
-      "default-src 'self'; img-src 'self' data: https://upload.wikimedia.org; connect-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
+      "default-src 'self'; img-src 'self' data: https://upload.wikimedia.org https://thumb.wikimedia.org; connect-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
     "x-content-type-options": "nosniff",
     "referrer-policy": "no-referrer",
   });

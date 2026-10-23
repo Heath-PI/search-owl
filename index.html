@@ -1566,27 +1566,42 @@
           owlPickerNote.textContent = `${catalog.count} verified species with ${catalog.count} distinct Wikimedia Commons photographs. Automatic rotation changes at midnight America/New_York time; a manual pick lasts until the next New York day.`;
           const saved = JSON.parse(localStorage.getItem("searchOwlSelection") || "null");
           const chosen = saved?.date === today && Number.isInteger(saved.index) ? saved.index : automaticIndex;
-          const showOwl = (index, attempts = 0) => {
+          let owlLoadToken = 0;
+          const tryOwl = (index, attempts, token, rotateOnFailure, requestedIndex) => {
             const owl = catalog.owls[index];
             const image = new Image();
             image.onload = () => {
+              if (token !== owlLoadToken) return;
               owlHero.style.backgroundImage = `linear-gradient(90deg, rgba(2,10,18,.76), rgba(2,10,18,.08)), linear-gradient(180deg, rgba(2,10,18,.01) 42%, rgba(2,10,18,.78) 100%), url("${owl.imageUrl.replace(/["\\]/g, "")}")`;
               owlHero.setAttribute("aria-label", `Search Owl — ${owl.name} photograph`);
               owlCredit.innerHTML = `<b>${esc(owl.name)}</b> · <i>${esc(owl.scientific)}</i><br>Photograph by ${esc(owl.creator)} · <a href="${esc(safeHref(owl.licenseUrl))}" target="_blank" rel="noopener noreferrer">${esc(owl.license)}</a> · <a href="${esc(safeHref(owl.sourceUrl))}" target="_blank" rel="noopener noreferrer">source</a>`;
             };
-            image.onerror = () => attempts + 1 < catalog.owls.length ? showOwl((index + 1) % catalog.owls.length, attempts + 1) : (owlCredit.textContent = "Today’s remote owl photograph is unavailable; showing the local Barn Owl fallback.");
+            image.onerror = () => {
+              if (token !== owlLoadToken) return;
+              if (rotateOnFailure && attempts + 1 < catalog.owls.length) {
+                return tryOwl((index + 1) % catalog.owls.length, attempts + 1, token, true, requestedIndex);
+              }
+              const requested = catalog.owls[requestedIndex];
+              owlHero.style.backgroundImage = `linear-gradient(90deg, rgba(2,10,18,.76), rgba(2,10,18,.08)), linear-gradient(180deg, rgba(2,10,18,.01) 42%, rgba(2,10,18,.78) 100%), url("/search-owl-barn-owl.jpg")`;
+              owlHero.setAttribute("aria-label", `Search Owl — local Barn Owl fallback; ${requested.name} photograph unavailable`);
+              owlCredit.innerHTML = `<b>${esc(requested.name)}</b> · <i>${esc(requested.scientific)}</i><br>That selected photograph could not be loaded. Showing the clearly labeled local Barn Owl fallback instead; no other species is silently substituted. <a href="${esc(safeHref(requested.sourceUrl))}" target="_blank" rel="noopener noreferrer">Open the selected owl’s source</a>`;
+            };
             image.src = owl.imageUrl;
           };
-          showOwl(chosen);
+          const showOwl = (index, rotateOnFailure = false) => {
+            const token = ++owlLoadToken;
+            tryOwl(index, 0, token, rotateOnFailure, index);
+          };
+          showOwl(chosen, saved?.date !== today);
           owlPicker.value = saved?.date === today ? String(chosen) : "daily";
           owlPicker.addEventListener("change", () => {
             if (owlPicker.value === "daily") {
               localStorage.removeItem("searchOwlSelection");
-              showOwl(automaticIndex);
+              showOwl(automaticIndex, true);
             } else {
               const index = Number(owlPicker.value);
               localStorage.setItem("searchOwlSelection", JSON.stringify({ date: today, index }));
-              showOwl(index);
+              showOwl(index, false);
             }
           });
         })
