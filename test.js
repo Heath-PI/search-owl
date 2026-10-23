@@ -51,11 +51,12 @@ test("context pictures reject document covers and require title relevance", () =
   assert.match(html, /Context only · title match:/);
   assert.match(html, /source date/);
 });
-test("public page preserves approved identity and perched owl without unwanted creator credit", () => {
+test("public page preserves approved identity and perched owl without the unwanted honorific", () => {
   const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
   assert.match(html, /Intensity is our priority/);
   assert.match(html, /featured owl photograph/);
-  assert.doesNotMatch(html, /Master Heath|Created by/i);
+  assert.match(html, /Created by Heath\./);
+  assert.doesNotMatch(html, /Master Heath/i);
   assert.match(html, /We use Google Translate/);
   assert.doesNotMatch(
     html,
