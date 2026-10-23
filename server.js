@@ -924,18 +924,40 @@ function buildContext(query, items = [], location = "") {
             ? "Decorative healthcare imagery is contextual only. It does not identify an actual facility or verify its services, availability, quality, accreditation, or endorsement."
           : rule?.id === "local places and amenities"
             ? "Decorative local-place imagery is contextual only. It does not identify a result or verify its location, opening hours, prices, services, availability, or endorsement."
-          : "Decorative imagery is contextual only and does not depict or verify the retrieved claims.",
+          : rule?.id === "cities and places"
+            ? "Decorative place imagery is shown only when its Wikimedia file title matches a distinguishing query term. It is contextual, not proof of the camera location, date, current appearance, or any retrieved claim."
+            : "Decorative imagery is contextual only and does not depict or verify the retrieved claims.",
     suggestions,
     evidenceTerms,
   };
 }
 
+const sceneGenericWords = new Set(
+  "a an and around at city current exterior for from image images in landmark landscape local near of official photo photograph picture road scene street the to travel tourism urban view weather with video game automobile vehicle residential architecture house apartment hospital healthcare building shops clothing fashion textile fuel gas station pump".split(" "),
+);
+function sceneQueryAnchors(query) {
+  return [...new Set(String(query || "")
+    .normalize("NFKC")
+    .toLowerCase()
+    .match(/[\p{L}\p{N}]+/gu) || [])]
+    .filter((word) => word.length >= 3 && !sceneGenericWords.has(word));
+}
+function sceneImageMatches(item, anchors) {
+  if (!/\.(?:avif|gif|jpe?g|png|tiff?|webp)$/i.test(String(item.title || ""))) return false;
+  if (!anchors.length) return false;
+  const title = String(item.title || "").normalize("NFKC").toLowerCase();
+  return anchors.some((word) => title.includes(word));
+}
 async function commonsSceneImages(query) {
   const explicit =
     /\b(porn|porno|pornographic|xxx|hentai|nsfw|nude|nudity|sex(?:ual|ually)?|erotic|fetish|genital|breast)\b/i;
+  const nonPhoto =
+    /\b(painting|drawing|illustration|engraving|lithograph|poster|diagram|map|collage|render(?:ing)?|generated|artwork)\b/i;
   if (explicit.test(String(query || ""))) return [];
+  const anchors = sceneQueryAnchors(query);
+  if (!anchors.length) return [];
   const data = await fetchJson(
-    `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrnamespace=6&gsrlimit=6&gsrsearch=${encodeURIComponent(query)}&prop=imageinfo&iiprop=url%7Cextmetadata%7Ctimestamp&iiurlwidth=700&format=json&origin=*`,
+    `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrnamespace=6&gsrlimit=12&gsrsearch=${encodeURIComponent(`"${anchors.join(" ")}" filetype:bitmap`)}&prop=imageinfo&iiprop=url%7Cextmetadata%7Ctimestamp&iiurlwidth=700&format=json&origin=*`,
     {
       headers: {
         "user-agent": "HUMM-Search-Engine-Hub/1.1 (public Search Owl service)",
@@ -948,8 +970,10 @@ async function commonsSceneImages(query) {
     .map((page) => {
       const info = page.imageinfo?.[0],
         meta = info?.extmetadata || {};
-      const screeningText = `${page.title || ""} ${strip(meta.ImageDescription)} ${strip(meta.Categories)}`;
-      if (explicit.test(screeningText)) return null;
+      const description = strip(meta.ImageDescription),
+        categories = strip(meta.Categories),
+        screeningText = `${page.title || ""} ${description} ${categories}`;
+      if (explicit.test(screeningText) || nonPhoto.test(screeningText)) return null;
       return {
         title: String(page.title || "").replace(/^File:/, ""),
         imageUrl: info?.thumburl || info?.url || "",
@@ -958,13 +982,17 @@ async function commonsSceneImages(query) {
         license: strip(meta.LicenseShortName) || "See source for license",
         licenseUrl: meta.LicenseUrl?.value || info?.descriptionurl || "",
         sourceDate: strip(meta.DateTimeOriginal) || info?.timestamp || null,
+        description,
+        categories,
+        matchBasis: anchors.filter((word) => String(page.title || "").normalize("NFKC").toLowerCase().includes(word)),
       };
     })
     .filter(
       (item) =>
         item &&
         /^https:\/\//.test(item.imageUrl) &&
-        /^https:\/\//.test(item.sourceUrl),
+        /^https:\/\//.test(item.sourceUrl) &&
+        sceneImageMatches(item, anchors),
     )
     .slice(0, 4);
 }
@@ -1164,7 +1192,7 @@ function start() {
           JSON.stringify({
             images: await commonsSceneImages(query),
             provider: "Wikimedia Commons",
-            note: "Non-explicit contextual decoration only. Source, creator, date when available, and license are shown with each image.",
+            note: "Contextual decoration only. Raster images must match a distinguishing query term in the Wikimedia file title; this is not independent geographic verification. Source, creator, date when available, and license are shown with each image.",
           }),
         );
       } catch {
@@ -1263,4 +1291,6 @@ module.exports = {
   capabilities,
   translateText,
   commonsSceneImages,
+  sceneQueryAnchors,
+  sceneImageMatches,
 };

@@ -1655,15 +1655,24 @@
             fetch("/api/scene-images?q=" + encodeURIComponent(context.sceneQuery))
               .then((response) => response.json())
               .then(({ images = [] }) => {
+                if (!images.length) {
+                  document.body.dataset.scene = "";
+                  contextNote.textContent += " No sufficiently relevant attributed photograph was verified, so no location picture is shown.";
+                  return;
+                }
                 images.slice(0, 4).forEach((item, index) => {
                   const card = document.createElement("div");
                   card.className = "topic-picture";
                   card.style.backgroundImage = `linear-gradient(#06101822, #06101855), url("${String(item.imageUrl).replace(/["\\]/g, "")}")`;
-                  card.innerHTML = `<a href="${esc(safeHref(item.sourceUrl))}" target="_blank" rel="noopener noreferrer">${esc(item.title)} · ${esc(item.creator)} · ${esc(item.license)}${item.sourceDate ? ` · ${esc(item.sourceDate)}` : ""}</a>`;
+                  const matched = Array.isArray(item.matchBasis) ? item.matchBasis.join(", ") : "file title";
+                  card.innerHTML = `<a href="${esc(safeHref(item.sourceUrl))}" target="_blank" rel="noopener noreferrer"><b>Context only · title match: ${esc(matched)}</b><br>${esc(item.title)} · ${esc(item.creator)} · ${esc(item.license)}${item.sourceDate ? ` · source date ${esc(item.sourceDate)}` : ""}</a>`;
                   wallpaperSides[index % 2].appendChild(card);
                 });
               })
-              .catch(() => {});
+              .catch(() => {
+                document.body.dataset.scene = "";
+                contextNote.textContent += " Context pictures were unavailable, so no location picture is shown.";
+              });
           }
           contextSuggestions.innerHTML = (context.suggestions || [])
             .map(

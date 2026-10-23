@@ -2,7 +2,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
-const { providers, capabilities, buildContext } = require("./server");
+const { providers, capabilities, buildContext, sceneQueryAnchors, sceneImageMatches } = require("./server");
 
 test("isolated package contains only approved deployable files", () => {
   const allowed = new Set([
@@ -39,6 +39,17 @@ test("daily owl catalog contains distinct, attributed species photographs", () =
   assert.match(html, /token !== owlLoadToken/);
   const server = fs.readFileSync(path.join(__dirname, "server.js"), "utf8");
   assert.match(server, /https:\/\/thumb\.wikimedia\.org/);
+});
+test("context pictures reject document covers and require title relevance", () => {
+  const anchors = sceneQueryAnchors("Vienna city landscape landmark");
+  assert.deepEqual(anchors, ["vienna"]);
+  assert.equal(sceneImageMatches({ title: "The American city.pdf", description: "Vienna bibliography" }, anchors), false);
+  assert.equal(sceneImageMatches({ title: "Unrelated skyline.jpg", description: "generic city" }, anchors), false);
+  assert.equal(sceneImageMatches({ title: "Porto bridge.jpg", categories: "Stockholm" }, anchors), false);
+  assert.equal(sceneImageMatches({ title: "Vienna Ringstrasse.jpg", description: "Vienna, Austria" }, anchors), true);
+  const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
+  assert.match(html, /Context only · title match:/);
+  assert.match(html, /source date/);
 });
 test("public page preserves approved identity, attribution and perched owl", () => {
   const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
