@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-23T05:02:48.528Z",
+  "generatedAt": "2026-10-23T05:08:47.934Z",
   "source": "Wikidata owl taxa (Strigiformes) with licensed Wikimedia Commons photographs and clearly labeled historical illustrations",
   "timezone": "America/New_York",
   "epoch": "2026-10-22",
@@ -3076,14 +3076,15 @@
       "name": "Papuan Hawk-Owl",
       "scientific": "Uroglaux dimorpha",
       "wikidata": "http://www.wikidata.org/entity/Q940831",
-      "fileName": "Uroglaux dimorpha - Mikael Bauer - 109950815.jpeg",
-      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/a/a2/Uroglaux_dimorpha_-_Mikael_Bauer_-_109950815.jpeg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Uroglaux_dimorpha_-_Mikael_Bauer_-_109950815.jpeg",
-      "creator": "Mikael Bauer",
-      "license": "CC BY 4.0",
-      "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
-      "sourceDate": "2010-10-31",
-      "mediaType": "photograph"
+      "fileName": "Uroglaux dimorpha.jpg",
+      "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d5/Uroglaux_dimorpha.jpg/1920px-Uroglaux_dimorpha.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Uroglaux_dimorpha.jpg",
+      "creator": "John Gould",
+      "license": "Public domain",
+      "licenseUrl": "https://commons.wikimedia.org/wiki/File:Uroglaux_dimorpha.jpg",
+      "sourceDate": "1875",
+      "mediaType": "historical illustration",
+      "mediaNote": "Historical illustration — we haven’t found a freely reusable photograph for this species."
     },
     {
       "name": "long-whiskered owlet",

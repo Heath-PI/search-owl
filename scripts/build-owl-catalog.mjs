@@ -14,17 +14,8 @@ LIMIT 600`;
 
 const stripHtml = (value = "") =>
   value.replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/\s+/g, " ").trim();
-const historicalArtworkTaxa = new Set("Bubo bouvieri|Bubo milesi|Bubo poensis|Bubo shelleyi|Glaucidium castaneum|Glaucidium cobanense|Glaucidium gnoma|Glaucidium griseiceps|Glaucidium sjostedti|Jubula lettii|Megascops barbarus|Megascops guatemalae|Ninox forbesi|Ninox fusca|Ninox hantu|Ninox hypogramma|Ninox jacquinoti|Ninox natalis|Ninox ochracea|Ninox rudolfi|Ninox squamipila|Ninox variegata|Otus alfredi|Otus balli|Otus brucei|Otus gurneyi|Otus icterorhynchus|Otus insularis|Otus magicus|Otus manadensis|Otus silvicola|Otus socotranus|Pyrroglaux podargina|Scotopelia ussheri|Strix bartelsi|Strix davidi|Tyto aurantia|Tyto detorta".split("|"));
-const photoOverrides = new Map([["Uroglaux dimorpha", {
-  fileName: "Uroglaux dimorpha - Mikael Bauer - 109950815.jpeg",
-  imageUrl: "https://upload.wikimedia.org/wikipedia/commons/a/a2/Uroglaux_dimorpha_-_Mikael_Bauer_-_109950815.jpeg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
-  sourceUrl: "https://commons.wikimedia.org/wiki/File:Uroglaux_dimorpha_-_Mikael_Bauer_-_109950815.jpeg",
-  creator: "Mikael Bauer",
-  license: "CC BY 4.0",
-  licenseUrl: "https://creativecommons.org/licenses/by/4.0",
-  sourceDate: "2010-10-31",
-  mediaType: "photograph",
-}]]);
+const historicalArtworkTaxa = new Set("Bubo bouvieri|Bubo milesi|Bubo poensis|Bubo shelleyi|Glaucidium castaneum|Glaucidium cobanense|Glaucidium gnoma|Glaucidium griseiceps|Glaucidium sjostedti|Jubula lettii|Megascops barbarus|Megascops guatemalae|Ninox forbesi|Ninox fusca|Ninox hantu|Ninox hypogramma|Ninox jacquinoti|Ninox natalis|Ninox ochracea|Ninox rudolfi|Ninox squamipila|Ninox variegata|Otus alfredi|Otus balli|Otus brucei|Otus gurneyi|Otus icterorhynchus|Otus insularis|Otus magicus|Otus manadensis|Otus silvicola|Otus socotranus|Pyrroglaux podargina|Scotopelia ussheri|Strix bartelsi|Strix davidi|Tyto aurantia|Tyto detorta|Uroglaux dimorpha".split("|"));
+const photoOverrides = new Map();
 
 const response = await fetch(
   `https://query.wikidata.org/sparql?format=json&query=${encodeURIComponent(sparql)}`,
