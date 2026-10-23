@@ -1050,6 +1050,9 @@
         ["Asia-Pacific","Australia","Sydney","Australian Securities Exchange (ASX)", "https://www.asx.com.au/"],
         ["Asia-Pacific","New Zealand","Wellington","NZX", "https://www.nzx.com/"]
       ];
+      const exchangeCaveats = {
+        "Nasdaq Nordic": "On Nasdaq’s external European Market Activity page, Latest Listings cards reuse Nasdaq tower/listing-event photographs. Helsinki, Stockholm, and other city labels identify the listing market; they do not identify the photographed skyline or building location.",
+      };
       const agriculturalSources = [
         ["Global","FAO Food Price Monitoring and Analysis (FPMA)","Domestic and international food-price series with country, market, commodity, unit and date where supplied.","https://fpma.fao.org/giews/fpmat4/#/dashboard/home"],
         ["Thailand — Bangkok","Department of Internal Trade daily agricultural retail and wholesale prices","Daily Bangkok-area minimum, maximum and average THB prices with date-range export.","https://pricelist.dit.go.th/"],
@@ -1375,7 +1378,7 @@
           );
         exchangeCount.textContent = `${matches.length} of ${exchangeDirectory.length}`;
         exchangeGrid.innerHTML = matches.map(([region, country, city, name, url]) =>
-          `<a class="launch exchange-card" target="_blank" rel="noopener noreferrer" href="${esc(safeHref(url))}"><strong>${esc(name)}</strong><div class="exchange-meta">${esc(region)} · ${esc(country)} · ${esc(city)}</div><small>Official destination. Search Owl does not claim or republish a live quote feed.</small></a>`
+          `<a class="launch exchange-card" target="_blank" rel="noopener noreferrer" href="${esc(safeHref(url))}"><strong>${esc(name)}</strong><div class="exchange-meta">${esc(region)} · ${esc(country)} · ${esc(city)}</div><small>Official destination. Search Owl does not claim or republish a live quote feed.${exchangeCaveats[name] ? ` ${esc(exchangeCaveats[name])}` : ""}</small></a>`
         ).join("") || "<p>No directory entry matches that filter.</p>";
       }
       exchangeFilter.addEventListener("input", () => renderExchangeDirectory(exchangeFilter.value));

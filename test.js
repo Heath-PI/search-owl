@@ -224,6 +224,8 @@ test("context decoration stays outside the centered owl and remains useful on na
   assert.match(html, /coverage gap, not evidence that no library or archive exists/);
   assert.match(html, /Official weather warnings & alerts/);
   assert.match(html, /WMO Severe Weather Information Centre/);
+  assert.match(html, /Latest Listings cards reuse Nasdaq tower\/listing-event photographs/);
+  assert.match(html, /city labels identify the listing market/);
   assert.match(html, /does not claim a global live alert feed/);
   assert.match(html, /Daily owl horoscope/);
   assert.match(html, /Light entertainment only—not science/);
