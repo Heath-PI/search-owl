@@ -1,7 +1,9 @@
 const http = require("node:http");
 const fs = require("node:fs");
 const path = require("node:path");
+const crypto = require("node:crypto");
 const { performance } = require("node:perf_hooks");
+const { createVisitStore, countMessage } = require("./visit-counter");
 const HOST = process.env.HOST || "0.0.0.0",
   PORT = Number(process.env.PORT || 31978),
   HTML = path.join(__dirname, "index.html");
@@ -1056,12 +1058,14 @@ function send(res, status, type, body) {
 const json = (res, status, body) =>
   send(res, status, "application/json; charset=utf-8", JSON.stringify(body));
 const requestBuckets = new Map();
+const requestBucketSalt = crypto.randomBytes(32);
 function allowed(req) {
-  const key = String(
+  const address = String(
       req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown",
     )
       .split(",")[0]
       .trim(),
+    key = crypto.createHash("sha256").update(requestBucketSalt).update(address).digest("base64url"),
     now = Date.now(),
     bucket = requestBuckets.get(key);
   if (!bucket || now - bucket.start > 60000) {
@@ -1073,7 +1077,10 @@ function allowed(req) {
 }
 const searchCache = new Map(),
   SEARCH_CACHE_MS = 120000;
-function start() {
+function renderHome(html, count) {
+  return html.replace("{{VISIT_COUNT_MESSAGE}}", countMessage(count));
+}
+function start({ visitStore = createVisitStore(), htmlPath = HTML, host = HOST, port = PORT } = {}) {
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, `http://${req.headers.host || "localhost"}`);
     if (url.pathname === "/healthz")
@@ -1087,8 +1094,22 @@ function start() {
           features: ["worldwide-metadata", "context-panels", "opensearch"],
         }),
       );
-    if (url.pathname === "/")
-      return send(res, 200, "text/html; charset=utf-8", fs.readFileSync(HTML));
+    if (url.pathname === "/") {
+      let count = null;
+      try {
+        count = await visitStore.increment();
+      } catch (error) {
+        console.warn("Visit counter unavailable:", String(error.message || error));
+      }
+      return send(res, 200, "text/html; charset=utf-8", renderHome(fs.readFileSync(htmlPath, "utf8"), count));
+    }
+    if (url.pathname === "/api/visits") {
+      try {
+        return json(res, 200, { count: await visitStore.current() });
+      } catch {
+        return json(res, 503, { error: "Visit count is temporarily unavailable." });
+      }
+    }
     if (url.pathname === "/opensearch.xml")
       return send(
         res,
@@ -1105,6 +1126,12 @@ function start() {
       );
     if (url.pathname === "/search-owl-icon.png")
       return send(res, 200, "image/png", fs.readFileSync(path.join(__dirname, "search-owl-icon.png")));
+    if (url.pathname === "/favicon.ico")
+      return send(res, 200, "image/x-icon", fs.readFileSync(path.join(__dirname, "favicon.ico")));
+    if (/^\/icon-(192|512)\.png$/.test(url.pathname))
+      return send(res, 200, "image/png", fs.readFileSync(path.join(__dirname, url.pathname.slice(1))));
+    if (url.pathname === "/site.webmanifest")
+      return send(res, 200, "application/manifest+json; charset=utf-8", fs.readFileSync(path.join(__dirname, "site.webmanifest")));
     if (url.pathname === "/owl-catalog.json")
       return send(res, 200, "application/json; charset=utf-8", JSON.stringify(photoOwlCatalog()));
     if (url.pathname === "/api/farmers-markets") {
@@ -1279,8 +1306,8 @@ function start() {
     }
     return send(res, 404, "text/plain; charset=utf-8", "Not found");
   });
-  server.listen(PORT, HOST, () =>
-    console.log(`Search Owl listening on ${HOST}:${PORT}`),
+  server.listen(port, host, () =>
+    console.log(`Search Owl listening on ${host}:${server.address().port}`),
   );
   return server;
 }
@@ -1297,4 +1324,5 @@ module.exports = {
   sceneQueryAnchors,
   sceneImageMatches,
   photoOwlCatalog,
+  renderHome,
 };

@@ -2,13 +2,17 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
-const { providers, capabilities, buildContext, sceneQueryAnchors, sceneImageMatches, photoOwlCatalog } = require("./server");
+const { providers, capabilities, buildContext, sceneQueryAnchors, sceneImageMatches, photoOwlCatalog, renderHome, start } = require("./server");
+const { PostgresVisitStore, UnavailableVisitStore, createVisitStore } = require("./visit-counter");
 
 test("isolated package contains only approved deployable files", () => {
   const allowed = new Set([
     ".gitignore",
     "README.md",
     "farmers-markets-us.json",
+    "favicon.ico",
+    "icon-192.png",
+    "icon-512.png",
     "index.html",
     "opensearch.xml",
     "owl-catalog.json",
@@ -18,10 +22,69 @@ test("isolated package contains only approved deployable files", () => {
     "search-owl-barn-owl.jpg",
     "search-owl-icon.png",
     "server.js",
+    "site.webmanifest",
     "scripts",
     "test.js",
+    "visit-counter.js",
   ]);
-  assert.deepEqual(fs.readdirSync(__dirname).filter((name) => name !== ".git").sort(), [...allowed].sort());
+  assert.deepEqual(
+    fs.readdirSync(__dirname).filter((name) => ![".git", "node_modules"].includes(name)).sort(),
+    [...allowed].sort(),
+  );
+});
+test("page renders an aggregate visit message and a safe failure fallback", () => {
+  assert.match(renderHome("<p>{{VISIT_COUNT_MESSAGE}}</p>", 1234), /1,234 times/);
+  assert.match(renderHome("<p>{{VISIT_COUNT_MESSAGE}}</p>", null), /temporarily unavailable/);
+});
+test("PostgreSQL adapter initializes once and performs atomic aggregate increments", async () => {
+  const calls = [];
+  const pool = {
+    async query(sql, params) {
+      calls.push({ sql: String(sql), params });
+      if (/RETURNING/.test(sql)) return { rows: [{ visit_count: "42" }], rowCount: 1 };
+      if (/SELECT/.test(sql)) return { rows: [{ visit_count: "42" }], rowCount: 1 };
+      return { rows: [], rowCount: 0 };
+    },
+  };
+  const store = new PostgresVisitStore(pool);
+  assert.equal(await store.increment(), 42);
+  assert.equal(await store.current(), 42);
+  assert.equal(calls.filter(({ sql }) => /CREATE TABLE/.test(sql)).length, 1);
+  assert.match(calls.find(({ sql }) => /RETURNING/.test(sql)).sql, /ON CONFLICT[\s\S]*visit_count \+ 1/);
+  assert.deepEqual(calls.find(({ sql }) => /RETURNING/.test(sql)).params, ["page-visits"]);
+});
+test("counter configuration and failure behavior do not collect visitor attributes", async () => {
+  assert.ok(createVisitStore({}) instanceof UnavailableVisitStore);
+  await assert.rejects(() => createVisitStore({}).increment(), /not configured/);
+  const source = fs.readFileSync(path.join(__dirname, "visit-counter.js"), "utf8");
+  assert.doesNotMatch(source, /user-agent|cookie|x-forwarded-for|remoteAddress|location/i);
+});
+test("homepage increments once while reads, health checks and icon assets do not", async (t) => {
+  let count = 9;
+  const store = { async increment() { return ++count; }, async current() { return count; } };
+  const server = start({ visitStore: store, host: "127.0.0.1", port: 0 });
+  await new Promise((resolve) => server.once("listening", resolve));
+  t.after(() => new Promise((resolve) => server.close(resolve)));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  const page = await fetch(`${base}/`);
+  assert.equal(page.status, 200);
+  assert.match(await page.text(), /Search Owl has been visited 10 times\./);
+  assert.deepEqual(await (await fetch(`${base}/api/visits`)).json(), { count: 10 });
+  assert.equal((await fetch(`${base}/healthz`)).status, 200);
+  assert.match((await fetch(`${base}/favicon.ico`)).headers.get("content-type"), /image\/x-icon/);
+  assert.match((await fetch(`${base}/icon-192.png`)).headers.get("content-type"), /image\/png/);
+  assert.match((await fetch(`${base}/site.webmanifest`)).headers.get("content-type"), /application\/manifest\+json/);
+  assert.equal(count, 10);
+});
+test("manifest and page publish installable barn-owl icon references", () => {
+  const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
+  const manifest = JSON.parse(fs.readFileSync(path.join(__dirname, "site.webmanifest"), "utf8"));
+  assert.match(html, /rel="manifest" href="\/site\.webmanifest"/);
+  assert.match(html, /rel="icon" href="\/favicon\.ico"/);
+  assert.match(html, /Add Search Owl to your desktop/);
+  assert.deepEqual(manifest.icons.map(({ sizes }) => sizes), ["192x192", "512x512"]);
+  for (const name of ["favicon.ico", "icon-192.png", "icon-512.png"])
+    assert.ok(fs.statSync(path.join(__dirname, name)).size > 1000);
 });
 test("daily owl catalog contains distinct, attributed and classified species images", () => {
   const catalog = photoOwlCatalog();
