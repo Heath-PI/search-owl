@@ -762,6 +762,14 @@
       </section>
       <footer class="panel note">
         <p id="visitCount" aria-live="polite">{{VISIT_COUNT_MESSAGE}}</p>
+        <p id="dailyVisitCount" class="note">{{DAILY_VISIT_MESSAGE}}</p>
+        <p id="dailySearchCountries" class="note">Searches by source country: {{SEARCH_COUNTRY_MESSAGE}}</p>
+        <p class="note">
+          Daily totals use America/New_York calendar days and begin with this feature; older lifetime visits are not backfilled.
+          Search country is resolved locally from Render's trusted edge IP signal and only aggregate country totals are stored.
+          No IP address, query text, cookie, or visitor profile is retained.
+          <a href="https://github.com/sapics/ip-location-db">Country data: ip-location-db user-country (PDDL)</a>.
+        </p>
         <details>
           <summary>Add Search Owl to your desktop</summary>
           <p>Use your browser's Install app or Create shortcut command. Your browser controls the installation and will use Search Owl's barn-owl icon.</p>

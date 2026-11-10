@@ -3,7 +3,8 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const { providers, capabilities, buildContext, sceneQueryAnchors, sceneImageMatches, photoOwlCatalog, renderHome, start } = require("./server");
-const { PostgresVisitStore, UnavailableVisitStore, createVisitStore } = require("./visit-counter");
+const { PostgresVisitStore, UnavailableVisitStore, createVisitStore, dayInTimezone, previousDay, normalizeCountry } = require("./visit-counter");
+const { OfflineCountryResolver, sourceCountry } = require("./geo-country");
 const translateLanguages = require("./translation-languages");
 
 test("isolated package contains only approved deployable files", () => {
@@ -12,12 +13,15 @@ test("isolated package contains only approved deployable files", () => {
     "README.md",
     "farmers-markets-us.json",
     "favicon.ico",
+    "geo-data",
+    "geo-country.js",
     "icon-192.png",
     "icon-512.png",
     "index.html",
     "opensearch.xml",
     "owl-catalog.json",
     "package.json",
+    "package-lock.json",
     "render.yaml",
     "search-owl-barn-owl-license.txt",
     "search-owl-barn-owl.jpg",
@@ -51,23 +55,68 @@ test("translation picker covers the current public Google Translate targets", ()
 test("page renders an aggregate visit message and a safe failure fallback", () => {
   assert.match(renderHome("<p>{{VISIT_COUNT_MESSAGE}}</p>", 1234), /1,234 times/);
   assert.match(renderHome("<p>{{VISIT_COUNT_MESSAGE}}</p>", null), /temporarily unavailable/);
+  const rendered = renderHome("{{VISIT_COUNT_MESSAGE}} {{DAILY_VISIT_MESSAGE}} {{SEARCH_COUNTRY_MESSAGE}}", {
+    count: 45,
+    timezone: "America/New_York",
+    visits: { today: 1, yesterday: 44, dates: { today: "2026-11-10", yesterday: "2026-11-09" } },
+    searches: [{ day: "2026-11-10", country: "US", count: 2 }],
+  });
+  assert.match(rendered, /Today \(2026-11-10\): 1/);
+  assert.match(rendered, /Yesterday \(2026-11-09\): 44/);
+  assert.match(rendered, /United States 2/);
 });
 test("PostgreSQL adapter initializes once and performs atomic aggregate increments", async () => {
   const calls = [];
   const pool = {
     async query(sql, params) {
       calls.push({ sql: String(sql), params });
-      if (/RETURNING/.test(sql)) return { rows: [{ visit_count: "42" }], rowCount: 1 };
+      if (/FROM total CROSS JOIN daily/.test(sql)) return { rows: [{ total_count: "42", daily_count: "3" }], rowCount: 1 };
+      if (/INSERT INTO public_search_days/.test(sql)) return { rows: [{ search_count: "7" }], rowCount: 1 };
       if (/SELECT/.test(sql)) return { rows: [{ visit_count: "42" }], rowCount: 1 };
       return { rows: [], rowCount: 0 };
     },
   };
   const store = new PostgresVisitStore(pool);
-  assert.equal(await store.increment(), 42);
+  assert.deepEqual(await store.incrementVisit("2026-11-10"), {
+    count: 42, today: 3, day: "2026-11-10", timezone: "America/New_York",
+  });
+  assert.equal(await store.incrementSearch("US", "2026-11-10"), 7);
   assert.equal(await store.current(), 42);
   assert.equal(calls.filter(({ sql }) => /CREATE TABLE/.test(sql)).length, 1);
-  assert.match(calls.find(({ sql }) => /RETURNING/.test(sql)).sql, /ON CONFLICT[\s\S]*visit_count \+ 1/);
-  assert.deepEqual(calls.find(({ sql }) => /RETURNING/.test(sql)).params, ["page-visits"]);
+  const increment = calls.find(({ sql }) => /FROM total CROSS JOIN daily/.test(sql));
+  assert.match(increment.sql, /ON CONFLICT[\s\S]*public_visit_days\.visit_count \+ 1/);
+  assert.deepEqual(increment.params, ["page-visits", "2026-11-10"]);
+  const searchIncrement = calls.find(({ sql }) => /INSERT INTO public_search_days/.test(sql));
+  assert.match(searchIncrement.sql, /ON CONFLICT \(search_day, country_code\)[\s\S]*search_count \+ 1/);
+  assert.deepEqual(searchIncrement.params, ["2026-11-10", "US"]);
+});
+test("daily buckets roll over in New York and summaries preserve missing days", async () => {
+  assert.equal(dayInTimezone(new Date("2026-11-10T04:59:59Z")), "2026-11-09");
+  assert.equal(dayInTimezone(new Date("2026-11-10T05:00:00Z")), "2026-11-10");
+  assert.equal(previousDay("2026-03-01"), "2026-02-28");
+  const pool = { async query(sql) {
+    if (/CREATE TABLE/.test(sql)) return { rows: [], rowCount: 0 };
+    if (/public_visit_counters WHERE/.test(sql)) return { rows: [{ visit_count: "45" }], rowCount: 1 };
+    if (/FROM public_visit_days/.test(sql)) return { rows: [{ day: "2026-11-10", count: "1" }], rowCount: 1 };
+    if (/FROM public_search_days/.test(sql)) return { rows: [{ day: "2026-11-10", country: "Unknown", count: "2" }], rowCount: 1 };
+    throw new Error("Unexpected SQL");
+  } };
+  const summary = await new PostgresVisitStore(pool).summary("2026-11-10");
+  assert.equal(summary.count, 45);
+  assert.deepEqual(summary.visits, { today: 1, yesterday: 0, dates: { today: "2026-11-10", yesterday: "2026-11-09" } });
+  assert.deepEqual(summary.searches, [{ day: "2026-11-10", country: "Unknown", count: 2 }]);
+});
+test("source countries require Render's trusted edge headers and valid ISO codes", () => {
+  const resolver = { lookup: (ip) => ip === "8.8.8.8" ? "US" : "Unknown" };
+  const spoofed = { headers: { "cf-ray": "ray", "cf-connecting-ip": "8.8.8.8", "x-forwarded-for": "8.8.8.8" } };
+  assert.equal(sourceCountry(spoofed, resolver, false), "Unknown");
+  assert.equal(sourceCountry(spoofed, resolver, true), "US");
+  assert.equal(sourceCountry({ headers: { "cf-connecting-ip": "8.8.8.8" } }, resolver, true), "Unknown");
+  assert.equal(normalizeCountry("us"), "US");
+  assert.equal(normalizeCountry("XX"), "Unknown");
+  const offline = new OfflineCountryResolver();
+  assert.equal(offline.lookup("8.8.8.8"), "US");
+  assert.equal(offline.lookup("not-an-ip"), "Unknown");
 });
 test("counter configuration and failure behavior do not collect visitor attributes", async () => {
   assert.ok(createVisitStore({}) instanceof UnavailableVisitStore);
@@ -77,15 +126,27 @@ test("counter configuration and failure behavior do not collect visitor attribut
 });
 test("homepage increments once while reads, health checks and icon assets do not", async (t) => {
   let count = 9;
-  const store = { async increment() { return ++count; }, async current() { return count; } };
-  const server = start({ visitStore: store, host: "127.0.0.1", port: 0 });
+  const searchCountries = [];
+  const store = {
+    async incrementVisit() { ++count; },
+    async summary() { return { count, timezone: "America/New_York", visits: { today: 1, yesterday: 0, dates: { today: "2026-11-10", yesterday: "2026-11-09" } }, searches: [] }; },
+    async incrementSearch(country) { searchCountries.push(country); },
+  };
+  const server = start({
+    visitStore: store,
+    countryResolver: { lookup: () => "US" },
+    renderEnvironment: true,
+    runSearchProviders: async () => [],
+    host: "127.0.0.1",
+    port: 0,
+  });
   await new Promise((resolve) => server.once("listening", resolve));
   t.after(() => new Promise((resolve) => server.close(resolve)));
   const base = `http://127.0.0.1:${server.address().port}`;
   const page = await fetch(`${base}/`);
   assert.equal(page.status, 200);
   assert.match(await page.text(), /Search Owl has been visited 10 times\./);
-  assert.deepEqual(await (await fetch(`${base}/api/visits`)).json(), { count: 10 });
+  assert.equal((await (await fetch(`${base}/api/visits`)).json()).count, 10);
   assert.equal((await fetch(`${base}/healthz`)).status, 200);
   assert.match((await fetch(`${base}/favicon.ico`)).headers.get("content-type"), /image\/x-icon/);
   assert.match((await fetch(`${base}/icon-192.png`)).headers.get("content-type"), /image\/png/);
@@ -95,6 +156,12 @@ test("homepage increments once while reads, health checks and icon assets do not
   assert.equal(webOnly.status, 422);
   assert.equal((await webOnly.json()).code, "web-only-language");
   assert.equal((await fetch(`${base}/api/translate?target=not-real&text=hello`)).status, 400);
+  assert.equal((await fetch(`${base}/api/search?q=`)).status, 400);
+  assert.equal(searchCountries.length, 0);
+  assert.equal((await fetch(`${base}/api/search?q=owl`, {
+    headers: { "cf-ray": "test-ray", "cf-connecting-ip": "8.8.8.8" },
+  })).status, 200);
+  assert.deepEqual(searchCountries, ["US"]);
   assert.equal(count, 10);
 });
 test("manifest and page publish installable barn-owl icon references", () => {

@@ -4,7 +4,17 @@
   "private": true,
   "description": "Search Owl public web service",
   "main": "server.js",
-  "scripts": { "start": "node server.js", "test": "node --test test.js" },
-  "dependencies": { "pg": "^8.16.3" },
-  "engines": { "node": ">=20" }
+  "scripts": {
+    "prestart": "node scripts/update-geo-country.mjs",
+    "start": "node server.js",
+    "test": "node --test test.js",
+    "update-geo-country": "node scripts/update-geo-country.mjs"
+  },
+  "dependencies": {
+    "maxmind": "^5.0.8",
+    "pg": "^8.16.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
 }

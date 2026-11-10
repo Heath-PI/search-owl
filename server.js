@@ -3,7 +3,8 @@ const fs = require("node:fs");
 const path = require("node:path");
 const crypto = require("node:crypto");
 const { performance } = require("node:perf_hooks");
-const { createVisitStore, countMessage } = require("./visit-counter");
+const { createVisitStore, countMessage, TIMEZONE } = require("./visit-counter");
+const { OfflineCountryResolver, sourceCountry } = require("./geo-country");
 const GOOGLE_TRANSLATE_LANGUAGES = require("./translation-languages");
 const GOOGLE_TRANSLATE_TARGETS = new Map(
   GOOGLE_TRANSLATE_LANGUAGES.map((language) => [language.code, language]),
@@ -1081,10 +1082,32 @@ function allowed(req) {
 }
 const searchCache = new Map(),
   SEARCH_CACHE_MS = 120000;
-function renderHome(html, count) {
-  return html.replace("{{VISIT_COUNT_MESSAGE}}", countMessage(count));
+function renderHome(html, analytics) {
+  const summary = analytics && typeof analytics === "object" ? analytics : null;
+  const count = summary ? summary.count : analytics;
+  const visits = summary?.visits;
+  const daily = visits
+    ? `Today (${visits.dates.today}): ${visits.today.toLocaleString("en-US")} · Yesterday (${visits.dates.yesterday}): ${visits.yesterday.toLocaleString("en-US")} · ${summary.timezone}`
+    : `Daily visit totals are temporarily unavailable. · ${TIMEZONE}`;
+  const grouped = summary?.searches || [];
+  const countryNames = new Intl.DisplayNames(["en"], { type: "region" });
+  const searchMessage = grouped.length
+    ? grouped.map(({ day, country, count: value }) => `${day}: ${country === "Unknown" ? country : countryNames.of(country)} ${value.toLocaleString("en-US")}`).join(" · ")
+    : "No dated searches have been recorded yet.";
+  return html
+    .replace("{{VISIT_COUNT_MESSAGE}}", countMessage(count))
+    .replace("{{DAILY_VISIT_MESSAGE}}", daily)
+    .replace("{{SEARCH_COUNTRY_MESSAGE}}", searchMessage);
 }
-function start({ visitStore = createVisitStore(), htmlPath = HTML, host = HOST, port = PORT } = {}) {
+function start({
+  visitStore = createVisitStore(),
+  countryResolver = new OfflineCountryResolver(),
+  renderEnvironment = process.env.RENDER,
+  runSearchProviders = runProviders,
+  htmlPath = HTML,
+  host = HOST,
+  port = PORT,
+} = {}) {
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, `http://${req.headers.host || "localhost"}`);
     if (url.pathname === "/healthz")
@@ -1099,17 +1122,18 @@ function start({ visitStore = createVisitStore(), htmlPath = HTML, host = HOST, 
         }),
       );
     if (url.pathname === "/") {
-      let count = null;
+      let analytics = null;
       try {
-        count = await visitStore.increment();
+        await visitStore.incrementVisit();
+        analytics = await visitStore.summary();
       } catch (error) {
         console.warn("Visit counter unavailable:", String(error.message || error));
       }
-      return send(res, 200, "text/html; charset=utf-8", renderHome(fs.readFileSync(htmlPath, "utf8"), count));
+      return send(res, 200, "text/html; charset=utf-8", renderHome(fs.readFileSync(htmlPath, "utf8"), analytics));
     }
     if (url.pathname === "/api/visits") {
       try {
-        return json(res, 200, { count: await visitStore.current() });
+        return json(res, 200, await visitStore.summary());
       } catch {
         return json(res, 503, { error: "Visit count is temporarily unavailable." });
       }
@@ -1273,6 +1297,11 @@ function start({ visitStore = createVisitStore(), htmlPath = HTML, host = HOST, 
           "application/json",
           JSON.stringify({ error: "Enter a search query." }),
         );
+      try {
+        await visitStore.incrementSearch(sourceCountry(req, countryResolver, renderEnvironment));
+      } catch (error) {
+        console.warn("Search counter unavailable:", String(error.message || error));
+      }
       const appliedLocation = isLocationRelevant(query) ? location : "",
         searchedQuery = appliedLocation ? `${query} ${appliedLocation}` : query,
         key = `${language}:${searchedQuery.toLocaleLowerCase()}`,
@@ -1288,7 +1317,7 @@ function start({ visitStore = createVisitStore(), htmlPath = HTML, host = HOST, 
             cache: { hit: true, maxAgeSeconds: SEARCH_CACHE_MS / 1000 },
           }),
         );
-      const arrivals = await runProviders(searchedQuery, { language }),
+      const arrivals = await runSearchProviders(searchedQuery, { language }),
         combined = combinedFindings(arrivals),
         payload = {
           query,
