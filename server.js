@@ -4,6 +4,10 @@ const path = require("node:path");
 const crypto = require("node:crypto");
 const { performance } = require("node:perf_hooks");
 const { createVisitStore, countMessage } = require("./visit-counter");
+const GOOGLE_TRANSLATE_LANGUAGES = require("./translation-languages");
+const GOOGLE_TRANSLATE_TARGETS = new Map(
+  GOOGLE_TRANSLATE_LANGUAGES.map((language) => [language.code, language]),
+);
 const HOST = process.env.HOST || "0.0.0.0",
   PORT = Number(process.env.PORT || 31978),
   HTML = path.join(__dirname, "index.html");
@@ -1132,6 +1136,8 @@ function start({ visitStore = createVisitStore(), htmlPath = HTML, host = HOST, 
       return send(res, 200, "image/png", fs.readFileSync(path.join(__dirname, url.pathname.slice(1))));
     if (url.pathname === "/site.webmanifest")
       return send(res, 200, "application/manifest+json; charset=utf-8", fs.readFileSync(path.join(__dirname, "site.webmanifest")));
+    if (url.pathname === "/translation-languages.js")
+      return send(res, 200, "application/javascript; charset=utf-8", fs.readFileSync(path.join(__dirname, "translation-languages.js")));
     if (url.pathname === "/owl-catalog.json")
       return send(res, 200, "application/json; charset=utf-8", JSON.stringify(photoOwlCatalog()));
     if (url.pathname === "/api/farmers-markets") {
@@ -1172,13 +1178,24 @@ function start({ visitStore = createVisitStore(), htmlPath = HTML, host = HOST, 
           .trim()
           .slice(0, 3000),
         target = String(url.searchParams.get("target") || "").trim();
-      if (!text || !/^[a-z]{2,3}(?:-[A-Z]{2})?$/.test(target))
+      const language = GOOGLE_TRANSLATE_TARGETS.get(target);
+      if (!text || !language)
         return send(
           res,
           400,
           "application/json",
           JSON.stringify({
             error: "Text and a valid target language are required.",
+          }),
+        );
+      if (!language.cloudNmt)
+        return send(
+          res,
+          422,
+          "application/json",
+          JSON.stringify({
+            error: "This target is supported by Google Translate on the web, but is not in the documented Cloud Translation NMT list.",
+            code: "web-only-language",
           }),
         );
       try {

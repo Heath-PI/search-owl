@@ -4,6 +4,8 @@ Isolated public deployment of Search Owl. This repository intentionally contains
 
 Optional provider credentials are read only from server environment variables. None are committed. Google Translate web handoffs work without credentials; in-page Cloud Translation remains unavailable until a separately approved key and billing account exist.
 
+The translation picker contains the 249 target languages exposed by Google Translate's public web interface as verified November 10, 2026. Search Owl attempts in-page translation only for the documented Cloud Translation NMT subset. Targets available only in the public web product open directly on Google Translate, and any unavailable or unconfigured Cloud request retains the same web fallback. The separate Search Owl display/search-language setting remains limited to English, French, Spanish, and Russian.
+
 Automatic no-key coverage is bounded to official/public metadata interfaces: Wikipedia, Library of Congress, Open Library, Crossref, Europe PMC, World Bank Documents & Reports, Project Gutenberg, Internet Archive, and DuckDuckGo Instant Answers. General web engines, national collections without a supported API, and official exchange/regulator sites are query-preserving browser handoffs and are never counted as collected results.
 
 Search responses are fetched on demand and cached for at most two minutes. Provider publication/indexing delays still apply. Search Owl does not claim real-time securities quotes; licensed feeds such as NSE real-time and delayed market products are intentionally not redistributed.

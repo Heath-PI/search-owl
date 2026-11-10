@@ -4,6 +4,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { providers, capabilities, buildContext, sceneQueryAnchors, sceneImageMatches, photoOwlCatalog, renderHome, start } = require("./server");
 const { PostgresVisitStore, UnavailableVisitStore, createVisitStore } = require("./visit-counter");
+const translateLanguages = require("./translation-languages");
 
 test("isolated package contains only approved deployable files", () => {
   const allowed = new Set([
@@ -25,11 +26,26 @@ test("isolated package contains only approved deployable files", () => {
     "site.webmanifest",
     "scripts",
     "test.js",
+    "translation-languages.js",
     "visit-counter.js",
   ]);
   assert.deepEqual(
     fs.readdirSync(__dirname).filter((name) => ![".git", "node_modules"].includes(name)).sort(),
     [...allowed].sort(),
+  );
+});
+test("translation picker covers the current public Google Translate targets", () => {
+  assert.equal(translateLanguages.length, 249);
+  assert.equal(new Set(translateLanguages.map(({ code }) => code)).size, 249);
+  assert.equal(translateLanguages.filter(({ cloudNmt }) => !cloudNmt).length, 57);
+  for (const code of ["en", "fr", "es", "ru", "yue", "bm-Nkoo", "tpi", "zh-CN", "zh-TW"])
+    assert.ok(translateLanguages.some((language) => language.code === code));
+  const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
+  assert.match(html, /all 249 targets currently exposed by Google Translate on the web/);
+  assert.match(html, /GOOGLE_TRANSLATE_LANGUAGES/);
+  assert.deepEqual(
+    [...html.matchAll(/<select[\s\S]*?id="language"[\s\S]*?<\/select>/g)][0][0].match(/value="(en|fr|es|ru)"/g),
+    ['value="en"', 'value="fr"', 'value="es"', 'value="ru"'],
   );
 });
 test("page renders an aggregate visit message and a safe failure fallback", () => {
@@ -74,6 +90,11 @@ test("homepage increments once while reads, health checks and icon assets do not
   assert.match((await fetch(`${base}/favicon.ico`)).headers.get("content-type"), /image\/x-icon/);
   assert.match((await fetch(`${base}/icon-192.png`)).headers.get("content-type"), /image\/png/);
   assert.match((await fetch(`${base}/site.webmanifest`)).headers.get("content-type"), /application\/manifest\+json/);
+  assert.match((await fetch(`${base}/translation-languages.js`)).headers.get("content-type"), /application\/javascript/);
+  const webOnly = await fetch(`${base}/api/translate?target=tpi&text=hello`);
+  assert.equal(webOnly.status, 422);
+  assert.equal((await webOnly.json()).code, "web-only-language");
+  assert.equal((await fetch(`${base}/api/translate?target=not-real&text=hello`)).status, 400);
   assert.equal(count, 10);
 });
 test("manifest and page publish installable barn-owl icon references", () => {

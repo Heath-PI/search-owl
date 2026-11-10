@@ -539,9 +539,15 @@
           partner. Choose a language to translate your query or individual
           result text.
         </p>
+        <p id="translateCoverage" class="note">
+          The picker includes all 249 targets currently exposed by Google Translate on the web.
+          Search Owl tries the documented Cloud Translation NMT subset in-page; web-only targets
+          open directly in Google Translate.
+        </p>
         <div class="search">
           <select
             id="translateTarget"
+            aria-describedby="translateCoverage"
             style="flex: 1; padding: 12px; border-radius: 10px"
           >
             <option value="en">English</option>
@@ -766,6 +772,7 @@
         the image.
       </footer>
     </main>
+    <script src="/translation-languages.js"></script>
     <script>
       const engines = [
         [
@@ -1551,8 +1558,24 @@
         renderHeritageDirectory();
       }
       renderLaunches();
+      const translateTarget = document.querySelector("#translateTarget");
+      if (Array.isArray(globalThis.GOOGLE_TRANSLATE_LANGUAGES)) {
+        const previousTarget = translateTarget.value || "en";
+        translateTarget.replaceChildren(
+          ...globalThis.GOOGLE_TRANSLATE_LANGUAGES.map(({ code, name, cloudNmt }) => {
+            const option = document.createElement("option");
+            option.value = code;
+            option.textContent = name;
+            option.dataset.cloudNmt = String(cloudNmt);
+            return option;
+          }),
+        );
+        translateTarget.value = globalThis.GOOGLE_TRANSLATE_LANGUAGES.some(
+          ({ code }) => code === previousTarget,
+        ) ? previousTarget : "en";
+      }
       const translateUrl = (text) =>
-        `https://translate.google.com/?sl=auto&tl=${encodeURIComponent(document.querySelector("#translateTarget").value)}&text=${encodeURIComponent(text)}&op=translate`;
+        `https://translate.google.com/?sl=auto&tl=${encodeURIComponent(translateTarget.value)}&text=${encodeURIComponent(text)}&op=translate`;
       function result(item, provider = "") {
         const text = [item.title, item.snippet].filter(Boolean).join("\n\n"),
           facts = [
@@ -1566,8 +1589,14 @@
       document.querySelector("#translateQuery").onclick = async () => {
         const text = q.value.trim();
         if (!text) return q.focus();
-        const target = document.querySelector("#translateTarget").value,
+        const target = translateTarget.value,
           output = document.querySelector("#translationOutput");
+        if (translateTarget.selectedOptions[0]?.dataset.cloudNmt === "false") {
+          output.textContent =
+            "Opening Google Translate. This target is available in the public web product but not in the documented Cloud Translation NMT list.";
+          window.open(translateUrl(text), "_blank", "noopener");
+          return;
+        }
         output.textContent = "Checking configured Google Cloud Translation…";
         try {
           const response = await fetch(
